@@ -6,10 +6,10 @@ describe('Station', () => {
         expect(setupFinished).to.be.true;
       });
     });
-    it('Test happy flow recover wallet from seed',()=>{
+    it('Test happy flow recover wallet from seed', () => {
       cy.recoverWalletFromSeed().then(recovered => {
         expect(recovered).to.be.true;
-      })
+      });
     });
   });
 });

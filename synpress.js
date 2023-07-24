@@ -14,7 +14,7 @@ if (process.env.DEBUG && process.env.DEBUG.includes('synpress')) {
 }
 
 if (!process.env.SEED_PHRASE) {
-  throw new Error('Please provide SEED_PHRASE')
+  throw new Error('Please provide SEED_PHRASE');
 }
 
 if (process.env.SYNPRESS_LOCAL_TEST) {
