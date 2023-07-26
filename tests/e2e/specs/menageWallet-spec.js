@@ -10,7 +10,6 @@ describe('Station', () => {
         cy.verifyManageWalletsForm().then(setupFinished => {
             expect(setupFinished).to.be.true;
           });
-        cy.wait(1000000);
       });
     });
   });
