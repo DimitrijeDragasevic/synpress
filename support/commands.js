@@ -15,6 +15,10 @@ Cypress.Commands.add('setupTerraStation', () => {
   return cy.task('setupTerraStation');
 });
 
+Cypress.Commands.add('evaluateSettings', () => {
+  return cy.task('evaluateSettings');
+});
+
 Cypress.Commands.add('assignWindows', () => {
   return cy.task('assignWindows');
 });
