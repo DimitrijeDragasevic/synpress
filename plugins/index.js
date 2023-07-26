@@ -1,8 +1,8 @@
 const helpers = require('../helpers');
 const playwright = require('../commands/playwrightMetamask');
-const playwrightTerraStation = require('../commands/playwrightTerraStation');
+const playwrightStation = require('../commands/playwrightStation');
 const metamask = require('../commands/metamask');
-const terraStation = require('../commands/terrastation');
+const station = require('../commands/station');
 const etherscan = require('../commands/etherscan');
 
 /**
@@ -42,9 +42,9 @@ module.exports = (on, config) => {
     // }
 
     if (!process.env.SKIP_TERRASTATION_INSTALL) {
-      const terrastationPath = await helpers.prepareTerraStation('7.4.1.1');
-      console.log(terrastationPath);
-      arguments_.extensions.push(terrastationPath);
+      const stationPath = await helpers.prepareStation('7.4.1.1');
+      console.log(stationPath);
+      arguments_.extensions.push(stationPath);
     }
 
     console.log(arguments_);
@@ -62,8 +62,8 @@ module.exports = (on, config) => {
       return true;
     },
     // playwright commands
-    initPlaywrightTerraStation: async () => {
-      const connected = await playwrightTerraStation.init();
+    initPlaywrightStation: async () => {
+      const connected = await playwrightStation.init();
       return connected;
     },
     initPlaywright: async () => {
@@ -331,16 +331,16 @@ module.exports = (on, config) => {
       const txSuccess = await etherscan.waitForTxSuccess(txid);
       return txSuccess;
     },
-    setupTerraStation: async () => {
-      await terraStation.initialSetup(null);
+    setupStation: async () => {
+      await station.initialSetup(null);
       return true;
     },
     recoverWalletFromSeed: async () => {
-      await terraStation.recoverWalletFromSeed();
+      await station.recoverWalletFromSeed();
       return true;
     },
     evaluateSettings: async () => {
-      await terraStation.evaluateSettings();
+      await station.evaluateSettings();
       return true;
     },
   });

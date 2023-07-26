@@ -8,7 +8,7 @@ declare namespace Cypress {
     initPlaywright(): Chainable<boolean>;
 
 
-    initPlaywrightTerraStation(): Chainable<boolean>;
+    initPlaywrightStation(): Chainable<boolean>;
     /**
      * Assign currently open tabs with playwright
      * @example
@@ -408,7 +408,7 @@ declare namespace Cypress {
       enableExperimentalSettings?: boolean,
     ): Chainable<Subject>;
 
-    setupTerraStation(): Chainable<Subject>;
+    setupStation(): Chainable<Subject>;
 
     recoverWalletFromSeed(): Chainable<Subject>;
 
