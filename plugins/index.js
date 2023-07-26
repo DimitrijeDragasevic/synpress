@@ -339,6 +339,10 @@ module.exports = (on, config) => {
       await terraStation.recoverWalletFromSeed();
       return true;
     },
+    evaluateSettings: async () => {
+      await terraStation.evaluateSettings();
+      return true;
+    },
   });
 
   if (process.env.BASE_URL) {

@@ -8,7 +8,7 @@ const submitButton = '[type="submit"]';
 const allDoneIcon = '[data-testid="DoneAllIcon"]';
 const connectButton = '[type="button"]';
 
-const menageWalletsCloseButton = '[class="Modal_close__2_zHW"]';
+const manageWalletsCloseButton = '[class="Modal_close__2_zHW"]';
 (module.exports.seedFormElements = {
   inputName,
   inputPassword,
@@ -22,5 +22,5 @@ const menageWalletsCloseButton = '[class="Modal_close__2_zHW"]';
     connectButton,
   }),
   (module.exports.manageWalletsForm = {
-    menageWalletsCloseButton,
+    manageWalletsCloseButton,
   });

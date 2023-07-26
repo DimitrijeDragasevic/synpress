@@ -193,9 +193,9 @@ module.exports = {
 
   async verifyFirstWalletAdded() {
     expect(
-      await terraStationExtension
-        .getByText('Test wallet 1')
-        .filter({ hasText: 'Test wallet 1' }),
+      await terraStationExtension.getByRole('button', {
+        name: 'Test wallet 1',
+      }),
     ).toBeVisible();
     await terraStationExtension.getByText('Test wallet 1').click();
     expect(
@@ -208,14 +208,13 @@ module.exports = {
     ).toBeVisible();
     expect(await terraStationExtension.getByText('Add a wallet')).toBeVisible();
     await terraStationExtension.click(
-      manageWalletsForm.menageWalletsCloseButton,
+      manageWalletsForm.manageWalletsCloseButton,
     );
   },
 
-  async goToMenageWalletsMenuFromHome() {
+  async goToManageWalletsMenuFromHome() {
     await terraStationExtension
-      .getByText('Test wallet 1')
-      .filter({ hasText: 'Test wallet 1' })
+      .getByRole('button', { name: 'Test wallet 1' })
       .click();
     expect(
       await terraStationExtension.getByText('Manage Wallets'),
@@ -237,5 +236,137 @@ module.exports = {
   ) {
     await this.assignSeedPage();
     await this.fillSeedForm(walletName, password, seed);
+  },
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Settings                                  */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Ensures text is in document, clicks text option, and closes modal.
+   *
+   * @param {string} text The text to find in the document.
+   * @param {boolean} click Whether or not to click the text option.
+   * @param {boolean} close Whether or not to close out of the settings modal.
+   */
+  async expectText(text, click = false, close = false) {
+    const textComponent = await terraStationExtension.getByText(text, {
+      exact: true,
+    });
+
+    await expect(textComponent).toBeVisible();
+
+    if (click) {
+      await textComponent.click();
+    }
+
+    if (close) {
+      await terraStationExtension.getByTestId('CloseIcon').click();
+    }
+  },
+
+  /**
+   * Opens settings, selects desired option, and closes modal.
+   *
+   * @param {string} buttonText The name or text available on the button to click.
+   * @param {boolean} initialize Whether or not to open the settings from the main page.
+   * @param {boolean} close Whether or not to close out of the settings modal.
+   */
+  async selectSettings(buttonText, initialize = true, close = false) {
+    if (initialize) {
+      await terraStationExtension.getByTestId('SettingsIcon').click();
+    }
+
+    const settingsButton = await terraStationExtension.getByRole('button', {
+      name: buttonText,
+    });
+    await expect(settingsButton).toBeVisible();
+    await settingsButton.click();
+
+    if (close) {
+      await terraStationExtension.getByTestId('CloseIcon').click();
+    }
+  },
+
+  // Runs through each of the available settings and ensures proper functionality.
+  async evaluateSettings() {
+    /* ---------------------------- Network Settings ---------------------------- */
+
+    // Ensure the network settings button is visible and click.
+    await this.selectSettings('Network Mainnet');
+
+    // Change to Testnet and ensure TESTNET banner is visible.
+    await this.selectSettings('Testnets', false);
+    await this.expectText('TESTNET');
+
+    // Change to Classic and ensure CLASSIC banner is visible.
+    await this.selectSettings('Network Testnet');
+    await this.selectSettings('Terra Classic', false);
+    await this.expectText('CLASSIC');
+
+    // Change back to Mainnet.
+    await this.selectSettings('Network Classic');
+    await this.selectSettings('Mainnets', false);
+
+    /* ---------------------------- Language Settings --------------------------- */
+
+    // Ensure the language settings button is visible and click.
+    await this.selectSettings('Language English');
+
+    // Change to Spanish and ensure Spanish receive text.
+    await this.selectSettings('Español', false, true);
+    await this.expectText(/Reciba/);
+
+    // Change to Mandarin and ensure Mandarin text.
+    await this.selectSettings('Idioma Español');
+    await this.selectSettings('中文', false, true);
+    await this.expectText('购买');
+
+    // Change back to English.
+    await this.selectSettings('语言 中文');
+    await this.selectSettings('English', false, true);
+
+    /* ---------------------------- Currency Settings --------------------------- */
+
+    // Ensure the currency settings button is visible and click.
+    await this.selectSettings('Currency USD');
+
+    // Ensure search criteria augments component.
+    await terraStationExtension.getByRole('textbox').fill('JPY');
+    await this.selectSettings('¥ - Japanese Yen', false, true);
+    await this.expectText('¥ 0.00');
+
+    // Change back to USD.
+    await this.selectSettings('Currency JPY');
+    await terraStationExtension.getByRole('textbox').fill('USD');
+    await this.selectSettings('$ - United States Dollar', false, true);
+    await this.expectText('$ 0.00');
+
+    /* ----------------------------- Theme Settings ----------------------------- */
+
+    // Ensure the theme settings button is visible and click.
+    await this.selectSettings('Theme Dark');
+
+    // Attempt to change to all available themes.
+    await this.expectText('Light', true);
+    await this.expectText('Blossom', true);
+    await this.expectText('Moon', true);
+    await this.expectText('Whale', true);
+    await this.expectText('Madness', true);
+
+    // Change back to Dark theme and close out of settings.
+    await this.expectText('Dark', true, true);
+
+    /* ---------------------------- Advanced Settings --------------------------- */
+
+    // Ensure the advanced settings button is visible and click.
+    await this.selectSettings('Advanced');
+
+    // Click into the LUNA asset and ensure uluna is available for copy.
+    await this.expectText('Developer Mode', true, true);
+    await terraStationExtension
+      .getByRole('heading', { name: /^LUNA \d+$/ })
+      .click();
+    await this.expectText('uluna');
   },
 };

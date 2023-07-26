@@ -17,11 +17,14 @@ const terrastation = {
     return true;
   },
   async recoverWalletFromSeed() {
-    await playwright.goToMenageWalletsMenuFromHome();
+    await playwright.goToManageWalletsMenuFromHome();
     await playwright.fillImportFromSeedPhraseForm(
       'Test wallet 2',
       'Testtest123!',
     );
+  },
+  async evaluateSettings() {
+    await playwright.evaluateSettings();
   },
 };
 
