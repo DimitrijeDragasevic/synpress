@@ -1,7 +1,7 @@
 describe('Station', () => {
     context('Test commands', () => {
       it(`Setup terraStation with one wallet using recover with seed phrase option`, () => {
-        cy.setupTerraStation().then(setupFinished => {
+        cy.setupStation().then(setupFinished => {
           expect(setupFinished).to.be.true;
         });
       });
@@ -10,7 +10,6 @@ describe('Station', () => {
             expect(verified).to.be.true;
           });
         cy.createWallet('Test wallet 3');
-        cy.wait(10000000);
       });
     });
   });
