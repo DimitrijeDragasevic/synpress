@@ -1,8 +1,8 @@
 /* eslint-disable ui-testing/no-disabled-tests */
 describe('Station', () => {
     context('Test commands', () => {
-      it(`Setup terraStation with one wallet using recover with seed phrase option`, () => {
-        cy.setupTerraStation().then(setupFinished => {
+      it(`Setup station with one wallet using recover with seed phrase option`, () => {
+        cy.setupStation().then(setupFinished => {
           expect(setupFinished).to.be.true;
         });
       });
