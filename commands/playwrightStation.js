@@ -222,8 +222,42 @@ module.exports = {
   },
 
   /* -------------------------------------------------------------------------- */
-  /*                                  Settings                                  */
+  /*                              Utility Functions                             */
   /* -------------------------------------------------------------------------- */
+
+  /**
+   * Mimics a user typing text into a text box.
+   *
+   * @param {string} text The text to input inside of the desired text box.
+   * @param {string} xpath The xpath which corresponds to the desired text box.
+   */
+  async userInput(text, xpath = '') {
+    if (xpath) {
+      await stationExtension.locator(xpath).fill(text);
+    } else {
+      await stationExtension.getByRole('textbox').fill(text);
+    }
+  },
+
+  /**
+   * Mimics a user submitting a transaction.
+   *
+   * @param {string} buttonText The text displayed on the transaction confirmation
+   * button.
+   * @param {boolean} expectDisabled Whether or not the Submit button is expected
+   * to be disabled.
+   */
+  async userSubmit(buttonText = 'Submit', expectDisabled = false) {
+    const submitButton = await stationExtension.getByRole('button', {
+      name: buttonText,
+    });
+
+    if (expectDisabled) {
+      await expect(submitButton).toHaveAttribute('disabled', '');
+    } else {
+      await submitButton.click();
+    }
+  },
 
   /**
    * Ensures text is in document, clicks text option, and closes modal.
@@ -232,10 +266,17 @@ module.exports = {
    * @param {boolean} click Whether or not to click the text option.
    * @param {boolean} close Whether or not to close out of the settings modal.
    */
-  async expectText(text, click = false, close = false) {
-    const textComponent = await stationExtension.getByText(text, {
-      exact: true,
-    });
+  async expectText(text, click = false, close = false, heading = false) {
+    let textComponent;
+    if (heading) {
+      textComponent = await stationExtension.getByRole('heading', {
+        name: text,
+      });
+    } else {
+      textComponent = await stationExtension.getByText(text, {
+        exact: true,
+      });
+    }
 
     await expect(textComponent).toBeVisible();
 
@@ -247,6 +288,10 @@ module.exports = {
       await stationExtension.getByTestId('CloseIcon').click();
     }
   },
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Settings                                  */
+  /* -------------------------------------------------------------------------- */
 
   /**
    * Opens settings, selects desired option, and closes modal.
@@ -271,7 +316,7 @@ module.exports = {
     }
   },
 
-  // Runs through each of the available settings and ensures proper functionality.
+  // Evaluates settings and ensures proper functionality.
   async evaluateSettings() {
     /* ---------------------------- Network Settings ---------------------------- */
 
@@ -296,11 +341,11 @@ module.exports = {
     // Ensure the language settings button is visible and click.
     await this.selectSettings('Language English');
 
-    // Change to Spanish and ensure Spanish receive text.
+    // Change to Spanish and ensure Spanish translated receive text.
     await this.selectSettings('Español', false, true);
     await this.expectText(/Reciba/);
 
-    // Change to Mandarin and ensure Mandarin text.
+    // Change to Mandarin and ensure Mandarin translated buy text.
     await this.selectSettings('Idioma Español');
     await this.selectSettings('中文', false, true);
     await this.expectText('购买');
@@ -314,14 +359,14 @@ module.exports = {
     // Ensure the currency settings button is visible and click.
     await this.selectSettings('Currency USD');
 
-    // Ensure search criteria augments component.
-    await stationExtension.getByRole('textbox').fill('JPY');
+    // Ensure search and select functionality.
+    await this.userInput('JPY');
     await this.selectSettings('¥ - Japanese Yen', false, true);
     await this.expectText('¥ 0.00');
 
     // Change back to USD.
     await this.selectSettings('Currency JPY');
-    await stationExtension.getByRole('textbox').fill('USD');
+    await this.userInput('USD');
     await this.selectSettings('$ - United States Dollar', false, true);
     await this.expectText('$ 0.00');
 
@@ -347,7 +392,120 @@ module.exports = {
 
     // Click into the LUNA asset and ensure uluna is available for copy.
     await this.expectText('Developer Mode', true, true);
-    await stationExtension.getByRole('heading', { name: /^LUNA \d+$/ }).click();
+    await this.expectText(/^LUNA \d+$/, true, false, true);
     await this.expectText('uluna');
+  },
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Manage Wallet                               */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Opens manage wallet settings and selects desired option.
+   *
+   * @param {string} linkText The name or text available on the manage wallet link
+   * to click.
+   * @param {boolean} initialize Whether or not to open the manage wallet settings
+   * from the main page.
+   * @param {string} role The role of the component.
+   */
+  async selectManage(linkText, initialize = true, role = 'link') {
+    if (initialize) {
+      await stationExtension
+        .getByRole('button', {
+          name: 'Test wallet 1',
+        })
+        .click();
+      await stationExtension
+        .getByRole('button', {
+          name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
+        })
+        .click();
+    }
+
+    const manageLink = await stationExtension.getByRole(role, {
+      name: linkText,
+    });
+    await expect(manageLink).toBeVisible();
+    await manageLink.click();
+  },
+
+  // Evaluates manage wallet options and ensures proper functionality.
+  async evaluateManageWallet() {
+    /* ------------------------------ Export Wallet ----------------------------- */
+
+    // Ensure the Export wallet link is visible and click.
+    await this.selectManage('Export wallet');
+
+    // Ensure error upon incorrect password entry.
+    await this.userInput('wrong password');
+    await this.expectText('Incorrect password');
+
+    // Ensure correct password entry results in QR code display.
+    await this.userInput('Testtest123!');
+    await this.userSubmit();
+    await this.expectText('QR code', false, true, true);
+
+    // Evaluate Private key functionality.
+    await this.expectText('Private key', true);
+
+    // Ensure correct password entry results in private key display.
+    await this.userInput('Testtest123!');
+    await this.userSubmit();
+    await this.expectText('Private Key', false, true, true);
+
+    /* ----------------------------- Change Password ---------------------------- */
+
+    // Ensure the Change password link is visible and click.
+    await this.selectManage('Change password');
+
+    // Ensure incorrect password error if wrong password entered.
+    await this.userInput('wrong password', 'input[name="current"]');
+    await this.expectText('Incorrect password');
+
+    // Ensure short password error if not longer than 10 chars.
+    await this.userInput('new', 'input[name="password"]');
+    await this.expectText('Password must be longer than 10 characters');
+
+    // Ensure password match error when new passwords mismatch.
+    await this.userInput('newpassword', 'input[name="password"]');
+    await this.userInput('newpass', 'input[name="confirm"]');
+    await this.expectText('Password does not match');
+
+    // Allow password change if all criteria pass.
+    await this.userInput('Testtest123!', 'input[name="current"]');
+    await this.userInput('newpassword', 'input[name="password"]');
+    await this.userInput('newpassword', 'input[name="confirm"]');
+    await this.userSubmit();
+    await this.userSubmit('Confirm');
+
+    /* ------------------------------- Lock Wallet ------------------------------ */
+
+    // Ensure the Lock wallet button is visible and click.
+    await this.selectManage('Lock', true, 'button');
+
+    // Expect submit to be disabled if user enters wrong password.
+    await this.selectManage('Test wallet 1', false);
+    await this.userInput('wrong password');
+    await this.userSubmit('Submit', true);
+
+    // Ensure user can unlock wallet with new password.
+    await this.userInput('newpassword');
+    await this.userSubmit();
+
+    /* ------------------------------ Delete Wallet ----------------------------- */
+
+    // Ensure the Delete wallet link is visible and click.
+    await this.selectManage('Delete wallet');
+
+    // Expect submit to be disabled upon wrong wallet name input.
+    await this.userInput('Wrong name 1');
+    await this.userSubmit('Submit', true);
+
+    // Expect user to be able to delete wallet when correct wallet name inputted.
+    await this.userInput('Test wallet 1');
+    await this.userSubmit();
+    await this.userSubmit('Confirm');
+    await this.expectText('Connect to Station');
   },
 };

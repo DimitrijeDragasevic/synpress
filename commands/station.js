@@ -26,6 +26,10 @@ const station = {
   async evaluateSettings() {
     await playwright.evaluateSettings();
   },
+
+  async evaluateManageWallet() {
+    await playwright.evaluateManageWallet();
+  },
 };
 
 module.exports = station;
