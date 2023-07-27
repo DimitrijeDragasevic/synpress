@@ -23,6 +23,11 @@ const station = {
       'Testtest123!',
     );
   },
+  async verifyManageWalletsForm() {
+    await playwright.goToManageWalletsMenuFromHome();
+    await playwright.verifyElementsManageWalletsForm();
+  },
+
   async evaluateSettings() {
     await playwright.evaluateSettings();
   },

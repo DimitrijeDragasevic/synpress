@@ -212,6 +212,33 @@ module.exports = {
       .click();
   },
 
+  async verifyElementsManageWalletsForm() {
+    expect(
+      await stationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(stationExtension, 'New wallet'),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(
+        stationExtension,
+        'Import from seed phrase',
+      ),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(
+        stationExtension,
+        'Import from private key',
+      ),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(stationExtension, 'New multisig wallet'),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(stationExtension, 'Access with ledger'),
+    ).toBeVisible();
+  },
+
   async fillImportFromSeedPhraseForm(
     walletName,
     password,
