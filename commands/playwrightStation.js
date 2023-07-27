@@ -214,28 +214,28 @@ module.exports = {
 
   async verifyElementsManageWalletsForm() {
     expect(
-      await terraStationExtension.getByText('Manage Wallets'),
+      await stationExtension.getByText('Manage Wallets'),
     ).toBeVisible();
     await expect(
-      await this.getButtonByText(terraStationExtension, 'New wallet'),
+      await this.getButtonByText(stationExtension, 'New wallet'),
     ).toBeVisible();
     await expect(
       await this.getButtonByText(
-        terraStationExtension,
+        stationExtension,
         'Import from seed phrase',
       ),
     ).toBeVisible();
     await expect(
       await this.getButtonByText(
-        terraStationExtension,
+        stationExtension,
         'Import from private key',
       ),
     ).toBeVisible();
     await expect(
-      await this.getButtonByText(terraStationExtension, 'New multisig wallet'),
+      await this.getButtonByText(stationExtension, 'New multisig wallet'),
     ).toBeVisible();
     await expect(
-      await this.getButtonByText(terraStationExtension, 'Access with ledger'),
+      await this.getButtonByText(stationExtension, 'Access with ledger'),
     ).toBeVisible();
   },
 
