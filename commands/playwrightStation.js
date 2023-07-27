@@ -213,23 +213,15 @@ module.exports = {
   },
 
   async verifyElementsManageWalletsForm() {
-    expect(
-      await stationExtension.getByText('Manage Wallets'),
-    ).toBeVisible();
+    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
     await expect(
       await this.getButtonByText(stationExtension, 'New wallet'),
     ).toBeVisible();
     await expect(
-      await this.getButtonByText(
-        stationExtension,
-        'Import from seed phrase',
-      ),
+      await this.getButtonByText(stationExtension, 'Import from seed phrase'),
     ).toBeVisible();
     await expect(
-      await this.getButtonByText(
-        stationExtension,
-        'Import from private key',
-      ),
+      await this.getButtonByText(stationExtension, 'Import from private key'),
     ).toBeVisible();
     await expect(
       await this.getButtonByText(stationExtension, 'New multisig wallet'),
@@ -296,13 +288,17 @@ module.exports = {
   async expectText(text, click = false, close = false, heading = false) {
     let textComponent;
     if (heading) {
-      textComponent = await stationExtension.getByRole('heading', {
-        name: text,
-      });
+      textComponent = await stationExtension
+        .getByRole('heading', {
+          name: text,
+        })
+        .first();
     } else {
-      textComponent = await stationExtension.getByText(text, {
-        exact: true,
-      });
+      textComponent = await stationExtension
+        .getByText(text, {
+          exact: true,
+        })
+        .first();
     }
 
     await expect(textComponent).toBeVisible();
@@ -389,13 +385,13 @@ module.exports = {
     // Ensure search and select functionality.
     await this.userInput('JPY');
     await this.selectSettings('¥ - Japanese Yen', false, true);
-    await this.expectText('¥ 0.00');
+    await this.expectText('¥ —');
 
     // Change back to USD.
     await this.selectSettings('Currency JPY');
     await this.userInput('USD');
     await this.selectSettings('$ - United States Dollar', false, true);
-    await this.expectText('$ 0.00');
+    await this.expectText('$ —');
 
     /* ----------------------------- Theme Settings ----------------------------- */
 
