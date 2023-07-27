@@ -7,6 +7,8 @@ const {
   manageWalletsForm,
 } = require('../pages/station/seed-page');
 
+const {createWalletElements} = require('../pages/station/create-wallet-page')
+
 const expect = require('@playwright/test').expect;
 
 let browser;
