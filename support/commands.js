@@ -27,6 +27,10 @@ Cypress.Commands.add('verifyManageWalletsForm', () => {
   return cy.task('verifyManageWalletsForm');
 });
 
+Cypress.Commands.add('createWallet', (walletName) => {
+  return cy.task('createWallet', walletName);
+});
+
 Cypress.Commands.add('assignActiveTabName', tabName => {
   return cy.task('assignActiveTabName', tabName);
 });

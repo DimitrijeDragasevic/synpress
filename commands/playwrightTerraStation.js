@@ -7,6 +7,10 @@ const {
   manageWalletsForm,
 } = require('../pages/terrastation/seed-page');
 
+const {
+  createWalletElements,
+} = require('../pages/terrastation/create-wallet-page');
+
 const expect = require('@playwright/test').expect;
 
 let browser;
@@ -197,9 +201,10 @@ module.exports = {
 
   async verifyFirstWalletAdded() {
     expect(
-      await terraStationExtension
-        .getByText('Test wallet 1')
-        .filter({ hasText: 'Test wallet 1' }),
+      await terraStationExtension.getByRole('button', {
+        name: 'Test wallet 1',
+        exact: true,
+      }),
     ).toBeVisible();
     await terraStationExtension.getByText('Test wallet 1').click();
     expect(
@@ -218,8 +223,7 @@ module.exports = {
 
   async goToManageWalletsMenuFromHome() {
     await terraStationExtension
-      .getByText('Test wallet 1')
-      .filter({ hasText: 'Test wallet 1' })
+      .getByRole('button', { name: 'Test wallet 1', exact: true })
       .click();
     expect(
       await terraStationExtension.getByText('Manage Wallets'),
@@ -259,6 +263,111 @@ module.exports = {
     await expect(
       await this.getButtonByText(terraStationExtension, 'Access with ledger'),
     ).toBeVisible();
+  },
+
+  async fillCreateWalletForm(walletName, password='Testtest123!') {
+    await this.assignNewWalletPage();
+    await terraStationExtensionNewWallet.fill(
+      createWalletElements.inputName,
+      walletName,
+    );
+    await terraStationExtensionNewWallet.fill(
+      createWalletElements.inputPassword,
+      password,
+    );
+    await terraStationExtensionNewWallet.fill(
+      createWalletElements.inputconfirmPassword,
+      password,
+    );
+
+    const mnemonicText = await terraStationExtensionNewWallet.textContent(
+      createWalletElements.mnemonicText,
+    );
+    const arrayMnemonic = mnemonicText.split(' ');
+    await terraStationExtensionNewWallet.check(createWalletElements.checkBox);
+    await terraStationExtensionNewWallet.click(
+      createWalletElements.submitButton,
+    );
+    await terraStationExtensionNewWallet.waitForURL('**/new#2');
+    const firtNumberString = await terraStationExtensionNewWallet
+      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
+      .first()
+      .textContent();
+    const secondNumberString = await terraStationExtensionNewWallet
+      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
+      .last()
+      .textContent();
+
+    const firstNumber = this.getNFromNthWord(firtNumberString);
+    const secondNumber = this.getNFromNthWord(secondNumberString);
+
+    await terraStationExtensionNewWallet
+      .getByRole('button', { name: arrayMnemonic[firstNumber - 1] })
+      .first()
+      .click();
+    await terraStationExtensionNewWallet
+      .getByRole('button', { name: arrayMnemonic[secondNumber - 1] })
+      .last()
+      .click();
+    await terraStationExtensionNewWallet.click(
+      createWalletElements.submitButton,
+    );
+
+    await terraStationExtensionNewWallet.waitForURL('**/new#3');
+    expect(
+      await terraStationExtensionNewWallet.getByTestId('DoneAllIcon'),
+    ).toBeVisible();
+    expect(
+      terraStationExtensionNewWallet.getByRole('button', {
+        name: 'Connect',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await terraStationExtensionNewWallet
+      .getByRole('button', { name: 'Connect', exact: true })
+      .click();
+
+    expect(
+      await terraStationExtensionNewWallet.getByRole('button', {
+        name: walletName,
+      }),
+    ).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet.getByText('Portfolio value'),
+    ).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet.getByText('Send'),
+    ).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet.getByText('Receive'),
+    ).toBeVisible();
+    expect(await terraStationExtensionNewWallet.getByText('Buy')).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet.getByText('0').first(),
+    ).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet
+        .getByText('.00', { exact: true })
+        .first(),
+    ).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet
+        .getByText('LUNA', { exact: true })
+        .first(),
+    ).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet.getByText('0').last(),
+    ).toBeVisible();
+    expect(
+      await terraStationExtensionNewWallet
+        .getByText('.00', { exact: true })
+        .last(),
+    ).toBeVisible();
+  },
+
+  getNFromNthWord(inputString) {
+    const match = inputString.match(/(\d+)\w{0,2} word/);
+    return match ? parseInt(match[1]) : null;
   },
 
   async fillImportFromSeedPhraseForm(

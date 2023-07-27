@@ -34,11 +34,8 @@ module.exports = (on, config) => {
 
     if (!process.env.SKIP_TERRASTATION_INSTALL) {
       const terrastationPath = await helpers.prepareTerraStation('7.4.1.1');
-      console.log(terrastationPath);
       arguments_.extensions.push(terrastationPath);
     }
-
-    console.log(arguments_);
 
     return arguments_;
   });
@@ -60,6 +57,11 @@ module.exports = (on, config) => {
 
     verifyManageWalletsForm: async () => {
       await terraStation.verifyManageWalletsForm();
+      return true;
+    },
+
+    createWallet: async (userName) => {
+      await terraStation.createWallet(userName);
       return true;
     },
 

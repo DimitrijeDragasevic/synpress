@@ -27,6 +27,10 @@ const terrastation = {
     await playwright.goToManageWalletsMenuFromHome();
     await playwright.verifyElementsManageWalletsForm();
   },
+
+  async createWallet(walletName) {
+    await playwright.fillCreateWalletForm(walletName);
+  },
 };
 
 module.exports = terrastation;
