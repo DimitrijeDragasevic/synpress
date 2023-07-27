@@ -34,11 +34,8 @@ module.exports = (on, config) => {
 
     if (!process.env.SKIP_TERRASTATION_INSTALL) {
       const stationPath = await helpers.prepareStation('7.4.1.1');
-      console.log(stationPath);
       arguments_.extensions.push(stationPath);
     }
-
-    console.log(arguments_);
 
     return arguments_;
   });
@@ -60,6 +57,11 @@ module.exports = (on, config) => {
 
     verifyManageWalletsForm: async () => {
       await station.verifyManageWalletsForm();
+      return true;
+    },
+
+    createWallet: async userName => {
+      await station.createWallet(userName);
       return true;
     },
 

@@ -213,23 +213,15 @@ module.exports = {
   },
 
   async verifyElementsManageWalletsForm() {
-    expect(
-      await stationExtension.getByText('Manage Wallets'),
-    ).toBeVisible();
+    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
     await expect(
       await this.getButtonByText(stationExtension, 'New wallet'),
     ).toBeVisible();
     await expect(
-      await this.getButtonByText(
-        stationExtension,
-        'Import from seed phrase',
-      ),
+      await this.getButtonByText(stationExtension, 'Import from seed phrase'),
     ).toBeVisible();
     await expect(
-      await this.getButtonByText(
-        stationExtension,
-        'Import from private key',
-      ),
+      await this.getButtonByText(stationExtension, 'Import from private key'),
     ).toBeVisible();
     await expect(
       await this.getButtonByText(stationExtension, 'New multisig wallet'),
@@ -534,5 +526,109 @@ module.exports = {
     await this.userSubmit();
     await this.userSubmit('Confirm');
     await this.expectText('Connect to Station');
+  },
+
+  async getButtonByText(page, text) {
+    return await page.getByRole('button', { name: text, exact: true });
+  },
+
+  async fillCreateWalletForm(walletName, password = 'Testtest123!') {
+    await this.assignNewWalletPage();
+    await stationExtensionNewWallet.fill(
+      createWalletElements.inputName,
+      walletName,
+    );
+    await stationExtensionNewWallet.fill(
+      createWalletElements.inputPassword,
+      password,
+    );
+    await stationExtensionNewWallet.fill(
+      createWalletElements.inputconfirmPassword,
+      password,
+    );
+
+    const mnemonicText = await stationExtensionNewWallet.textContent(
+      createWalletElements.mnemonicText,
+    );
+    const arrayMnemonic = mnemonicText.split(' ');
+    await stationExtensionNewWallet.check(createWalletElements.checkBox);
+    await stationExtensionNewWallet.click(createWalletElements.submitButton);
+    await stationExtensionNewWallet.waitForURL('**/new#2');
+    const firtNumberString = await stationExtensionNewWallet
+      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
+      .first()
+      .textContent();
+    const secondNumberString = await stationExtensionNewWallet
+      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
+      .last()
+      .textContent();
+
+    const firstNumber = this.getNFromNthWord(firtNumberString);
+    const secondNumber = this.getNFromNthWord(secondNumberString);
+
+    await stationExtensionNewWallet
+      .getByRole('button', { name: arrayMnemonic[firstNumber - 1] })
+      .first()
+      .click();
+    await stationExtensionNewWallet
+      .getByRole('button', { name: arrayMnemonic[secondNumber - 1] })
+      .last()
+      .click();
+    await stationExtensionNewWallet.click(createWalletElements.submitButton);
+
+    await stationExtensionNewWallet.waitForURL('**/new#3');
+    expect(
+      await stationExtensionNewWallet.getByTestId('DoneAllIcon'),
+    ).toBeVisible();
+    expect(
+      stationExtensionNewWallet.getByRole('button', {
+        name: 'Connect',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await stationExtensionNewWallet
+      .getByRole('button', { name: 'Connect', exact: true })
+      .click();
+
+    expect(
+      await stationExtensionNewWallet.getByRole('button', {
+        name: walletName,
+      }),
+    ).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('Portfolio value'),
+    ).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('Send')).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('Receive')).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('Buy')).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('0').first(),
+    ).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('.00', { exact: true }).first(),
+    ).toBeVisible();
+    expect(
+      await stationExtensionNewWallet
+        .getByText('LUNA', { exact: true })
+        .first(),
+    ).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('0').last()).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('.00', { exact: true }).last(),
+    ).toBeVisible();
+  },
+
+  getNFromNthWord(inputString) {
+    const match = inputString.match(/(\d+)\w{0,2} word/);
+    return match ? parseInt(match[1]) : null;
+  },
+
+  async fillImportFromSeedPhraseForm(
+    walletName,
+    password,
+    seed = process.env.SEED_PHRASE_TWO,
+  ) {
+    await this.assignSeedPage();
+    await this.fillSeedForm(walletName, password, seed);
   },
 };

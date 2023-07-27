@@ -28,6 +28,10 @@ const station = {
     await playwright.verifyElementsManageWalletsForm();
   },
 
+  async createWallet(walletName) {
+    await playwright.fillCreateWalletForm(walletName);
+  },
+
   async evaluateSettings() {
     await playwright.evaluateSettings();
   },

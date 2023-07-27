@@ -9,6 +9,8 @@ declare namespace Cypress {
 
     verifyManageWalletsForm(): Chainable<Subject>;
 
+    createWallet(walletName: string): Chainable<Subject>;
+
     initPlaywrightStation(): Chainable<boolean>;
     /**
      * Assign currently open tabs with playwright
