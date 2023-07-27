@@ -59,7 +59,7 @@ module.exports = (on, config) => {
     },
 
     verifyManageWalletsForm: async () => {
-      await terraStation.verifyManageWalletsForm();
+      await station.verifyManageWalletsForm();
       return true;
     },
 
