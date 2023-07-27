@@ -221,17 +221,17 @@ module.exports = {
       );
     }
   },
-  async getTerraStationReleases(version) {
+  async getStationReleases(version) {
     log(
-      `Trying to find TerraStation wallet version ${version} in GitHub releases..`,
+      `Trying to find Station wallet version ${version} in GitHub releases..`,
     );
 
     const filename = `Station.Wallet.${version}.-.Chrome.zip`;
     const downloadUrl = `https://github.com/terra-money/station-extension/releases/download/v${version}/Station.Wallet.${version}.-.Chrome.zip`;
-    const tagName = `terra-station-${version}`;
+    const tagName = `station-chrome-${version}`;
 
     log(
-      `TerraStation wallet version found! Filename: ${filename}; Download url: ${downloadUrl}; Tag name: ${tagName}`,
+      `Station wallet version found! Filename: ${filename}; Download url: ${downloadUrl}; Tag name: ${tagName}`,
     );
 
     return {
@@ -241,8 +241,8 @@ module.exports = {
     };
   },
 
-  async prepareTerraStation(version) {
-    const release = await module.exports.getTerraStationReleases(version);
+  async prepareStation(version) {
+    const release = await module.exports.getStationReleases(version);
     if (!release.tagName) {
       throw new Error('tagName is undefined in the release object');
     }
@@ -255,26 +255,25 @@ module.exports = {
     }
 
     await module.exports.createDirIfNotExist(downloadsDirectory);
-    const terraStationDirectory = path.join(
-      downloadsDirectory,
-      release.tagName,
+    const stationDirectory = path.join(downloadsDirectory, release.tagName);
+    const stationDirectoryExists = await module.exports.checkDirOrFileExist(
+      stationDirectory,
     );
-    const terraStationDirectoryExists =
-      await module.exports.checkDirOrFileExist(terraStationDirectory);
-    const terraStationManifestFilePath = path.join(
+    const stationManifestFilePath = path.join(
       downloadsDirectory,
       release.tagName,
       'manifest.json',
     );
-    const terraStationManifestFileExists =
-      await module.exports.checkDirOrFileExist(terraStationManifestFilePath);
-    if (!terraStationDirectoryExists && !terraStationManifestFileExists) {
-      await module.exports.download(release.downloadUrl, terraStationDirectory);
+    const stationManifestFileExists = await module.exports.checkDirOrFileExist(
+      stationManifestFilePath,
+    );
+    if (!stationDirectoryExists && !stationManifestFileExists) {
+      await module.exports.download(release.downloadUrl, stationDirectory);
     } else {
-      log('TerraStation Wallet is already downloaded');
+      log('Station Wallet is already downloaded');
     }
 
-    return terraStationDirectory + '/build';
+    return stationDirectory + '/build';
   },
   async prepareMetamask(version) {
     const release = await module.exports.getMetamaskReleases(version);

@@ -7,12 +7,12 @@ Cypress.Commands.add('initPlaywright', () => {
   return cy.task('initPlaywright');
 });
 
-Cypress.Commands.add('initPlaywrightTerraStation', () => {
-  return cy.task('initPlaywrightTerraStation');
+Cypress.Commands.add('initPlaywrightStation', () => {
+  return cy.task('initPlaywrightStation');
 });
 
-Cypress.Commands.add('setupTerraStation', () => {
-  return cy.task('setupTerraStation');
+Cypress.Commands.add('setupStation', () => {
+  return cy.task('setupStation');
 });
 
 Cypress.Commands.add('evaluateSettings', () => {

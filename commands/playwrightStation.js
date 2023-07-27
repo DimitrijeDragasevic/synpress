@@ -5,18 +5,18 @@ const {
   seedFormElements,
   seedCompletedFormElements,
   manageWalletsForm,
-} = require('../pages/terrastation/seed-page');
+} = require('../pages/station/seed-page');
 
 const expect = require('@playwright/test').expect;
 
 let browser;
 let mainWindow;
-let terraStationExtension;
-let terraStationExtensionNewWallet;
-let terraStationExtensionSeed;
-let terraStationExtensionPrivateKey;
-let terraStationExtensionMultiSig;
-let terraStationExtensionLedger;
+let stationExtension;
+let stationExtensionNewWallet;
+let stationExtensionSeed;
+let stationExtensionPrivateKey;
+let stationExtensionMultiSig;
+let stationExtensionLedger;
 let activeTabName;
 
 module.exports = {
@@ -26,23 +26,23 @@ module.exports = {
   mainWindow() {
     return mainWindow;
   },
-  terraStationExtension() {
-    return terraStationExtension;
+  stationExtension() {
+    return stationExtension;
   },
-  terraStationExtensionNewWallet() {
-    return terraStationExtensionNewWallet;
+  stationExtensionNewWallet() {
+    return stationExtensionNewWallet;
   },
-  terraStationExtensionSeed() {
-    return terraStationExtensionSeed;
+  stationExtensionSeed() {
+    return stationExtensionSeed;
   },
-  terraStationExtensionPrivateKey() {
-    return terraStationExtensionPrivateKey;
+  stationExtensionPrivateKey() {
+    return stationExtensionPrivateKey;
   },
-  terraStationExtensionMultiSig() {
-    return terraStationExtensionMultiSig;
+  stationExtensionMultiSig() {
+    return stationExtensionMultiSig;
   },
-  terraStationExtensionLedger() {
-    return terraStationExtensionLedger;
+  stationExtensionLedger() {
+    return stationExtensionLedger;
   },
   activeTabName() {
     return activeTabName;
@@ -74,24 +74,24 @@ module.exports = {
     return browser.isConnected();
   },
   async assignStartPage() {
-    let terraStationExtensionUrl;
+    let stationExtensionUrl;
     let serviceWorkers = await browser.contexts()[0].serviceWorkers();
     for (let worker of serviceWorkers) {
       const url = worker._initializer.url;
 
       // Check if the URL contains 'background.js'
       if (url.includes('background.js')) {
-        terraStationExtensionUrl = url.replace('background.js', 'index.html#/');
+        stationExtensionUrl = url.replace('background.js', 'index.html#/');
         break; // Exit the loop once the correct service worker is found
       }
     }
 
     const blankPage = await browser.contexts()[0].newPage();
-    await blankPage.goto(terraStationExtensionUrl);
+    await blankPage.goto(stationExtensionUrl);
     let pages = await browser.contexts()[0].pages();
     pages.forEach(page => {
       if (page.url().includes('index.html')) {
-        terraStationExtension = page;
+        stationExtension = page;
       }
     });
   },
@@ -104,29 +104,29 @@ module.exports = {
   },
   async assignNewWalletPage() {
     const newWalletPagePromise = this.waitForNewPageWithUrlPart('auth/new');
-    await terraStationExtension.getByText('New wallet').click();
-    terraStationExtensionNewWallet = await newWalletPagePromise;
+    await stationExtension.getByText('New wallet').click();
+    stationExtensionNewWallet = await newWalletPagePromise;
   },
   async assignSeedPage() {
     const seedPagePromise = this.waitForNewPageWithUrlPart('auth/recover');
-    await terraStationExtension.getByText('Import from seed phrase').click();
-    terraStationExtensionSeed = await seedPagePromise;
+    await stationExtension.getByText('Import from seed phrase').click();
+    stationExtensionSeed = await seedPagePromise;
   },
   async assignPrivateKeyPage() {
     const privateKeyPagePromise = this.waitForNewPageWithUrlPart('auth/import');
-    await terraStationExtension.getByText('Import from private key').click();
-    terraStationExtensionPrivateKey = await privateKeyPagePromise;
+    await stationExtension.getByText('Import from private key').click();
+    stationExtensionPrivateKey = await privateKeyPagePromise;
   },
   async assignMultiSigPage() {
     const multisigWalletPagePromise =
       this.waitForNewPageWithUrlPart('auth/multisig/new');
-    await terraStationExtension.getByText('New multisig wallet').click();
-    terraStationExtensionMultiSig = await multisigWalletPagePromise;
+    await stationExtension.getByText('New multisig wallet').click();
+    stationExtensionMultiSig = await multisigWalletPagePromise;
   },
   async assignLedgerPage() {
     const ledgerPagePromise = this.waitForNewPageWithUrlPart('auth/ledger');
-    await terraStationExtension.getByText('Access with ledger').click();
-    terraStationExtensionLedger = await ledgerPagePromise;
+    await stationExtension.getByText('Access with ledger').click();
+    stationExtensionLedger = await ledgerPagePromise;
   },
   async clear() {
     browser = null;
@@ -140,9 +140,9 @@ module.exports = {
     }
     return true;
   },
-  async switchToTerraStationWindow() {
-    await terraStationExtension.bringToFront();
-    await module.exports.assignActiveTabName('terraStation');
+  async switchToStationWindow() {
+    await stationExtension.bringToFront();
+    await module.exports.assignActiveTabName('station');
     return true;
   },
   async bringToFrontAndReload(page) {
@@ -152,79 +152,62 @@ module.exports = {
 
   async setupQaWalletAndVerify() {
     await this.fillSeedForm('Test wallet 1', 'Testtest123!');
-    await this.bringToFrontAndReload(terraStationExtension);
+    await this.bringToFrontAndReload(stationExtension);
     await this.verifyFirstWalletAdded();
   },
   async fillSeedForm(walletName, password, seed = process.env.SEED_PHRASE) {
-    await terraStationExtensionSeed.bringToFront();
-    await terraStationExtensionSeed.waitForLoadState();
-    await terraStationExtensionSeed.fill(
-      seedFormElements.inputName,
-      walletName,
-    );
-    await terraStationExtensionSeed.fill(
-      seedFormElements.inputPassword,
-      password,
-    );
-    await terraStationExtensionSeed.fill(
+    await stationExtensionSeed.bringToFront();
+    await stationExtensionSeed.waitForLoadState();
+    await stationExtensionSeed.fill(seedFormElements.inputName, walletName);
+    await stationExtensionSeed.fill(seedFormElements.inputPassword, password);
+    await stationExtensionSeed.fill(
       seedFormElements.inputconfirmPassword,
       password,
     );
-    await terraStationExtensionSeed.fill(
-      seedFormElements.inputMnemonicSeed,
-      seed,
-    );
-    await terraStationExtensionSeed.click(seedFormElements.submitButton),
-      await terraStationExtensionSeed.waitForURL('**/recover#3');
+    await stationExtensionSeed.fill(seedFormElements.inputMnemonicSeed, seed);
+    await stationExtensionSeed.click(seedFormElements.submitButton),
+      await stationExtensionSeed.waitForURL('**/recover#3');
 
+    expect(await stationExtensionSeed.getByTestId('DoneAllIcon')).toBeVisible();
     expect(
-      await terraStationExtensionSeed.getByTestId('DoneAllIcon'),
-    ).toBeVisible();
-    expect(
-      terraStationExtensionSeed.getByRole('button', {
+      stationExtensionSeed.getByRole('button', {
         name: 'Connect',
         exact: true,
       }),
     ).toBeVisible();
-    await terraStationExtensionSeed
+    await stationExtensionSeed
       .getByRole('button', { name: 'Connect', exact: true })
       .click();
   },
 
   async verifyFirstWalletAdded() {
     expect(
-      await terraStationExtension.getByRole('button', {
+      await stationExtension.getByRole('button', {
         name: 'Test wallet 1',
       }),
     ).toBeVisible();
-    await terraStationExtension.getByText('Test wallet 1').click();
+    await stationExtension.getByText('Test wallet 1').click();
+    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
     expect(
-      await terraStationExtension.getByText('Manage Wallets'),
-    ).toBeVisible();
-    expect(
-      await terraStationExtension.getByRole('button', {
+      await stationExtension.getByRole('button', {
         name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
       }),
     ).toBeVisible();
-    expect(await terraStationExtension.getByText('Add a wallet')).toBeVisible();
-    await terraStationExtension.click(
-      manageWalletsForm.manageWalletsCloseButton,
-    );
+    expect(await stationExtension.getByText('Add a wallet')).toBeVisible();
+    await stationExtension.click(manageWalletsForm.manageWalletsCloseButton);
   },
 
   async goToManageWalletsMenuFromHome() {
-    await terraStationExtension
+    await stationExtension
       .getByRole('button', { name: 'Test wallet 1' })
       .click();
+    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
     expect(
-      await terraStationExtension.getByText('Manage Wallets'),
-    ).toBeVisible();
-    expect(
-      await terraStationExtension.getByRole('button', {
+      await stationExtension.getByRole('button', {
         name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
       }),
     );
-    await terraStationExtension
+    await stationExtension
       .getByRole('button', { name: 'Add a wallet' })
       .click();
   },
@@ -250,7 +233,7 @@ module.exports = {
    * @param {boolean} close Whether or not to close out of the settings modal.
    */
   async expectText(text, click = false, close = false) {
-    const textComponent = await terraStationExtension.getByText(text, {
+    const textComponent = await stationExtension.getByText(text, {
       exact: true,
     });
 
@@ -261,7 +244,7 @@ module.exports = {
     }
 
     if (close) {
-      await terraStationExtension.getByTestId('CloseIcon').click();
+      await stationExtension.getByTestId('CloseIcon').click();
     }
   },
 
@@ -274,17 +257,17 @@ module.exports = {
    */
   async selectSettings(buttonText, initialize = true, close = false) {
     if (initialize) {
-      await terraStationExtension.getByTestId('SettingsIcon').click();
+      await stationExtension.getByTestId('SettingsIcon').click();
     }
 
-    const settingsButton = await terraStationExtension.getByRole('button', {
+    const settingsButton = await stationExtension.getByRole('button', {
       name: buttonText,
     });
     await expect(settingsButton).toBeVisible();
     await settingsButton.click();
 
     if (close) {
-      await terraStationExtension.getByTestId('CloseIcon').click();
+      await stationExtension.getByTestId('CloseIcon').click();
     }
   },
 
@@ -332,13 +315,13 @@ module.exports = {
     await this.selectSettings('Currency USD');
 
     // Ensure search criteria augments component.
-    await terraStationExtension.getByRole('textbox').fill('JPY');
+    await stationExtension.getByRole('textbox').fill('JPY');
     await this.selectSettings('¥ - Japanese Yen', false, true);
     await this.expectText('¥ 0.00');
 
     // Change back to USD.
     await this.selectSettings('Currency JPY');
-    await terraStationExtension.getByRole('textbox').fill('USD');
+    await stationExtension.getByRole('textbox').fill('USD');
     await this.selectSettings('$ - United States Dollar', false, true);
     await this.expectText('$ 0.00');
 
@@ -364,9 +347,7 @@ module.exports = {
 
     // Click into the LUNA asset and ensure uluna is available for copy.
     await this.expectText('Developer Mode', true, true);
-    await terraStationExtension
-      .getByRole('heading', { name: /^LUNA \d+$/ })
-      .click();
+    await stationExtension.getByRole('heading', { name: /^LUNA \d+$/ }).click();
     await this.expectText('uluna');
   },
 };
