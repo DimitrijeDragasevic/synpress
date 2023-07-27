@@ -1,9 +1,9 @@
 const log = require('debug')('synpress:metamask');
-const playwright = require('./playwrightTerraStation');
+const playwright = require('./playwrightStation');
 
-const elements = require('../pages/terrastation/main-page');
+const elements = require('../pages/station/main-page');
 
-const terrastation = {
+const station = {
   async initialSetup(playwrightInstance) {
     if (playwrightInstance) {
       await playwright.init(playwrightInstance);
@@ -27,6 +27,14 @@ const terrastation = {
     await playwright.goToManageWalletsMenuFromHome();
     await playwright.verifyElementsManageWalletsForm();
   },
+  
+  async evaluateSettings() {
+    await playwright.evaluateSettings();
+  },
+
+  async evaluateManageWallet() {
+    await playwright.evaluateManageWallet();
+  },
 };
 
-module.exports = terrastation;
+module.exports = station;

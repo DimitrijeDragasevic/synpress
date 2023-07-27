@@ -9,7 +9,7 @@ declare namespace Cypress {
 
     verifyManageWalletsForm(): Chainable<Subject>;
 
-    initPlaywrightTerraStation(): Chainable<boolean>;
+    initPlaywrightStation(): Chainable<boolean>;
     /**
      * Assign currently open tabs with playwright
      * @example
@@ -409,9 +409,14 @@ declare namespace Cypress {
       enableExperimentalSettings?: boolean,
     ): Chainable<Subject>;
 
-    setupTerraStation(): Chainable<Subject>;
+    setupStation(): Chainable<Subject>;
 
     recoverWalletFromSeed(): Chainable<Subject>;
+
+    evaluateSettings(): Chainable<Subject>;
+
+    evaluateManageWallet(): Chainable<Subject>;
+
     /**
      * Get transaction status from Etherscan API
      * @example

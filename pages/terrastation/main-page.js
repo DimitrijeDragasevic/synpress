@@ -1,1 +1,0 @@
-// elements from main page
