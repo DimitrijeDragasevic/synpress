@@ -212,6 +212,33 @@ module.exports = {
       .click();
   },
 
+  async verifyElementsManageWalletsForm() {
+    expect(
+      await terraStationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(terraStationExtension, 'New wallet'),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(
+        terraStationExtension,
+        'Import from seed phrase',
+      ),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(
+        terraStationExtension,
+        'Import from private key',
+      ),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(terraStationExtension, 'New multisig wallet'),
+    ).toBeVisible();
+    await expect(
+      await this.getButtonByText(terraStationExtension, 'Access with ledger'),
+    ).toBeVisible();
+  },
+
   async fillImportFromSeedPhraseForm(
     walletName,
     password,
