@@ -11,10 +11,15 @@ describe('Station', () => {
         expect(settingsEvaluated).to.be.true;
       });
     });
-    it('Test happy flow recover wallet from seed', () => {
-      cy.recoverWalletFromSeed().then(recovered => {
-        expect(recovered).to.be.true;
+    it(`Evaluate Station manage wallet functionality`, () => {
+      cy.evaluateManageWallet().then(manageWalletEvaluated => {
+        expect(manageWalletEvaluated).to.be.true;
       });
     });
+    // it('Test happy flow recover wallet from seed', () => {
+    //   cy.recoverWalletFromSeed().then(recovered => {
+    //     expect(recovered).to.be.true;
+    //   });
+    // });
   });
 });

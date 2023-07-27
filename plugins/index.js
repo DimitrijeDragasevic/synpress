@@ -343,6 +343,10 @@ module.exports = (on, config) => {
       await station.evaluateSettings();
       return true;
     },
+    evaluateManageWallet: async () => {
+      await station.evaluateManageWallet();
+      return true;
+    },
   });
 
   if (process.env.BASE_URL) {
