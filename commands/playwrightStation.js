@@ -242,6 +242,120 @@ module.exports = {
     await this.fillSeedForm(walletName, password, seed);
   },
 
+  async getButtonByText(page, text) {
+    return await page.getByRole('button', { name: text, exact: true });
+  },
+
+  async fillCreateWalletForm(walletName, password = 'Testtest123!') {
+    await this.assignNewWalletPage();
+    await stationExtensionNewWallet.fill(
+      createWalletElements.inputName,
+      walletName,
+    );
+    await stationExtensionNewWallet.fill(
+      createWalletElements.inputPassword,
+      password,
+    );
+    await stationExtensionNewWallet.fill(
+      createWalletElements.inputconfirmPassword,
+      password,
+    );
+
+    const mnemonicText = await stationExtensionNewWallet.textContent(
+      createWalletElements.mnemonicText,
+    );
+    const arrayMnemonic = mnemonicText.split(' ');
+    await stationExtensionNewWallet.check(createWalletElements.checkBox);
+    await stationExtensionNewWallet.click(createWalletElements.submitButton);
+    await stationExtensionNewWallet.waitForURL('**/new#2');
+    const firtNumberString = await stationExtensionNewWallet
+      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
+      .first()
+      .textContent();
+    const secondNumberString = await stationExtensionNewWallet
+      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
+      .last()
+      .textContent();
+
+    const firstNumber = this.getNFromNthWord(firtNumberString);
+    const secondNumber = this.getNFromNthWord(secondNumberString);
+
+    await stationExtensionNewWallet
+      .getByRole('button', { name: arrayMnemonic[firstNumber - 1] })
+      .first()
+      .click();
+    await stationExtensionNewWallet
+      .getByRole('button', { name: arrayMnemonic[secondNumber - 1] })
+      .last()
+      .click();
+    await stationExtensionNewWallet.click(createWalletElements.submitButton);
+
+    await stationExtensionNewWallet.waitForURL('**/new#3');
+    expect(
+      await stationExtensionNewWallet.getByTestId('DoneAllIcon'),
+    ).toBeVisible();
+    expect(
+      stationExtensionNewWallet.getByRole('button', {
+        name: 'Connect',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await stationExtensionNewWallet
+      .getByRole('button', { name: 'Connect', exact: true })
+      .click();
+
+    expect(
+      await stationExtensionNewWallet.getByRole('button', {
+        name: walletName,
+      }),
+    ).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('Portfolio value'),
+    ).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('Send')).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('Receive')).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('Buy')).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('0').first(),
+    ).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('.00', { exact: true }).first(),
+    ).toBeVisible();
+    expect(
+      await stationExtensionNewWallet
+        .getByText('LUNA', { exact: true })
+        .first(),
+    ).toBeVisible();
+    expect(await stationExtensionNewWallet.getByText('0').last()).toBeVisible();
+    expect(
+      await stationExtensionNewWallet.getByText('.00', { exact: true }).last(),
+    ).toBeVisible();
+  },
+
+  getNFromNthWord(inputString) {
+    const match = inputString.match(/(\d+)\w{0,2} word/);
+    return match ? parseInt(match[1]) : null;
+  },
+
+  async fillImportFromSeedPhraseForm(
+    walletName,
+    password,
+    seed = process.env.SEED_PHRASE_TWO,
+  ) {
+    await this.assignSeedPage();
+    await this.fillSeedForm(walletName, password, seed);
+  },
+
+  async close() {
+    let pages = await browser.contexts()[0].pages();
+    pages.forEach(page => {
+      if (page.url().includes('runner')) {
+        return;
+      }
+      page.close();
+    });
+  },
+
   /* -------------------------------------------------------------------------- */
   /*                              Utility Functions                             */
   /* -------------------------------------------------------------------------- */
@@ -286,6 +400,7 @@ module.exports = {
    * @param {string} text The text to find in the document.
    * @param {boolean} click Whether or not to click the text option.
    * @param {boolean} close Whether or not to close out of the settings modal.
+   * @param {boolean} heading Whether or not the text has a heading role.
    */
   async expectText(text, click = false, close = false, heading = false) {
     let textComponent;
@@ -401,11 +516,9 @@ module.exports = {
     await this.selectSettings('Theme Dark');
 
     // Attempt to change to all available themes.
-    await this.expectText('Light', true);
-    await this.expectText('Blossom', true);
-    await this.expectText('Moon', true);
-    await this.expectText('Whale', true);
-    await this.expectText('Madness', true);
+    for (const theme of ['Blossom', 'Light', 'Madness', 'Moon', 'Whale']) {
+      await this.expectText(theme, true);
+    }
 
     // Change back to Dark theme and close out of settings.
     await this.expectText('Dark', true, true);
@@ -534,117 +647,114 @@ module.exports = {
     await this.expectText('Connect to Station');
   },
 
-  async getButtonByText(page, text) {
-    return await page.getByRole('button', { name: text, exact: true });
-  },
+  /* -------------------------------------------------------------------------- */
+  /*                                Manage Assets                               */
+  /* -------------------------------------------------------------------------- */
 
-  async fillCreateWalletForm(walletName, password = 'Testtest123!') {
-    await this.assignNewWalletPage();
-    await stationExtensionNewWallet.fill(
-      createWalletElements.inputName,
-      walletName,
-    );
-    await stationExtensionNewWallet.fill(
-      createWalletElements.inputPassword,
-      password,
-    );
-    await stationExtensionNewWallet.fill(
-      createWalletElements.inputconfirmPassword,
-      password,
-    );
+  /**
+   * Opens asset management modal, clicks desired filter, and evaluates resulting
+   * asset list.
+   *
+   * @param {string} filter The asset management filter to click.
+   * @param {string} filteredAsset The asset which is expected to be filtered out
+   * of the asset list after applying the filter.
+   */
+  async evaluateFilter(filter, filteredAsset) {
+    // Evaluate checking and unchecking the filter.
+    for (const action of ['check', 'uncheck']) {
+      // Open the asset management modal.
+      await stationExtension
+        .getByRole('button', {
+          name: 'Manage',
+        })
+        .click();
 
-    const mnemonicText = await stationExtensionNewWallet.textContent(
-      createWalletElements.mnemonicText,
-    );
-    const arrayMnemonic = mnemonicText.split(' ');
-    await stationExtensionNewWallet.check(createWalletElements.checkBox);
-    await stationExtensionNewWallet.click(createWalletElements.submitButton);
-    await stationExtensionNewWallet.waitForURL('**/new#2');
-    const firtNumberString = await stationExtensionNewWallet
-      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
-      .first()
-      .textContent();
-    const secondNumberString = await stationExtensionNewWallet
-      .getByText(/\b([1-9]|1[0-9]|2[0-4])\w{0,2} word\b/)
-      .last()
-      .textContent();
-
-    const firstNumber = this.getNFromNthWord(firtNumberString);
-    const secondNumber = this.getNFromNthWord(secondNumberString);
-
-    await stationExtensionNewWallet
-      .getByRole('button', { name: arrayMnemonic[firstNumber - 1] })
-      .first()
-      .click();
-    await stationExtensionNewWallet
-      .getByRole('button', { name: arrayMnemonic[secondNumber - 1] })
-      .last()
-      .click();
-    await stationExtensionNewWallet.click(createWalletElements.submitButton);
-
-    await stationExtensionNewWallet.waitForURL('**/new#3');
-    expect(
-      await stationExtensionNewWallet.getByTestId('DoneAllIcon'),
-    ).toBeVisible();
-    expect(
-      stationExtensionNewWallet.getByRole('button', {
-        name: 'Connect',
-        exact: true,
-      }),
-    ).toBeVisible();
-    await stationExtensionNewWallet
-      .getByRole('button', { name: 'Connect', exact: true })
-      .click();
-
-    expect(
-      await stationExtensionNewWallet.getByRole('button', {
-        name: walletName,
-      }),
-    ).toBeVisible();
-    expect(
-      await stationExtensionNewWallet.getByText('Portfolio value'),
-    ).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Send')).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Receive')).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Buy')).toBeVisible();
-    expect(
-      await stationExtensionNewWallet.getByText('0').first(),
-    ).toBeVisible();
-    expect(
-      await stationExtensionNewWallet.getByText('.00', { exact: true }).first(),
-    ).toBeVisible();
-    expect(
-      await stationExtensionNewWallet
-        .getByText('LUNA', { exact: true })
-        .first(),
-    ).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('0').last()).toBeVisible();
-    expect(
-      await stationExtensionNewWallet.getByText('.00', { exact: true }).last(),
-    ).toBeVisible();
-  },
-
-  getNFromNthWord(inputString) {
-    const match = inputString.match(/(\d+)\w{0,2} word/);
-    return match ? parseInt(match[1]) : null;
-  },
-
-  async fillImportFromSeedPhraseForm(
-    walletName,
-    password,
-    seed = process.env.SEED_PHRASE_TWO,
-  ) {
-    await this.assignSeedPage();
-    await this.fillSeedForm(walletName, password, seed);
-  },
-
-  async close() {
-    let pages = await browser.contexts()[0].pages();
-    pages.forEach(page => {
-      if (page.url().includes('runner')) {
-        return;
+      if (
+        filter === 'Hide non-whitelisted' &&
+        stationExtension.isVisible(`text='${filteredAsset}'`)
+      ) {
+        // Evaluate if Hide non-whitelisted filter filters specified asset.
+        await this.expectText(filter, true, true);
+        const nonWhitelistedToken = await stationExtension
+          .getByText(filteredAsset)
+          .first();
+        if (action === 'check') {
+          await expect(nonWhitelistedToken).toBeVisible();
+        } else {
+          await expect(nonWhitelistedToken).not.toBeVisible();
+        }
+      } else if (
+        filter === 'Hide low-balance' &&
+        stationExtension.isVisible(`text='${filteredAsset}'`)
+      ) {
+        // Evaluate if Hide low-balance filter filters specified asset.
+        await this.expectText(filter, true, true);
+        const lowBalanceToken = await stationExtension
+          .getByText(filteredAsset)
+          .first();
+        if (action === 'check') {
+          await expect(lowBalanceToken).toBeVisible();
+        } else {
+          await expect(lowBalanceToken).not.toBeVisible();
+        }
       }
-      page.close();
-    });
+    }
+  },
+
+  /**
+   * Opens asset management settings, clicks desired asset, and evaluates
+   * resulting asset list.
+   *
+   * @param {string} asset The symbol of an asset unavailable in the active
+   * wallet to include in the asset list.
+   */
+  async evaluateAsset(asset) {
+    // Evaluate checking and unchecking the asset.
+    for (const action of ['check', 'uncheck']) {
+      // Open the asset management modal.
+      await stationExtension
+        .getByRole('button', {
+          name: 'Manage',
+        })
+        .click();
+
+      // Click asset and close out of asset management modal.
+      await this.userInput(asset);
+      await stationExtension
+        .getByRole('listitem')
+        .filter({
+          hasText: new RegExp(`^${asset}`),
+        })
+        .getByRole('button')
+        .click();
+      await stationExtension.getByTestId('CloseIcon').click();
+
+      // Evaluate if asset is properly added or removed from the asset list.
+      const assetItem = await stationExtension.getByRole('article').filter({
+        hasText: new RegExp(`^${asset}.*?${asset}$`),
+      });
+      if (action === 'check') {
+        await expect(assetItem).toBeVisible();
+      } else {
+        await expect(assetItem).not.toBeVisible();
+      }
+    }
+  },
+
+  // Evaluates manage assets actions and ensures proper functionality.
+  async evaluateManageAssets() {
+    /* --------------------------- Add / Remove Assets -------------------------- */
+
+    const unavailableAssets = ['AKT', 'BNB', 'DOT'];
+    // Evaluate selection of unavailable assets in manage assets.
+    for (const unavailableAsset of unavailableAssets) {
+      await this.evaluateAsset(unavailableAsset);
+    }
+
+    /* ------------------------------ Apply Filters ----------------------------- */
+
+    // Evaluate the application of asset management filters.
+    await this.evaluateFilter('Hide non-whitelisted', 'ATOM-OSMO LP');
+    await this.evaluateFilter('Hide low-balance', 'axlUSDT');
   },
 };

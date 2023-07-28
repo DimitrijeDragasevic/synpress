@@ -23,6 +23,10 @@ Cypress.Commands.add('evaluateManageWallet', () => {
   return cy.task('evaluateManageWallet');
 });
 
+Cypress.Commands.add('evaluateManageAssets', () => {
+  return cy.task('evaluateManageAssets');
+});
+
 Cypress.Commands.add('assignWindows', () => {
   return cy.task('assignWindows');
 });
