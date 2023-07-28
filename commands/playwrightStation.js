@@ -7,7 +7,7 @@ const {
   manageWalletsForm,
 } = require('../pages/station/seed-page');
 
-const {createWalletElements} = require('../pages/station/create-wallet-page')
+const { createWalletElements } = require('../pages/station/create-wallet-page');
 
 const expect = require('@playwright/test').expect;
 
@@ -636,5 +636,15 @@ module.exports = {
   ) {
     await this.assignSeedPage();
     await this.fillSeedForm(walletName, password, seed);
+  },
+
+  async close() {
+    let pages = await browser.contexts()[0].pages();
+    pages.forEach(page => {
+      if (page.url().includes('runner')) {
+        return;
+      }
+      page.close();
+    });
   },
 };
