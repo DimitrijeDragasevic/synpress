@@ -1,11 +1,6 @@
 /* eslint-disable ui-testing/no-disabled-tests */
 describe('Station', () => {
   context('Test commands', () => {
-    it(`Setup Station with one wallet using recover with seed phrase option`, () => {
-      cy.setupStation().then(setupFinished => {
-        expect(setupFinished).to.be.true;
-      });
-    });
     it(`Evaluate Station settings functionality`, () => {
       cy.evaluateSettings().then(settingsEvaluated => {
         expect(settingsEvaluated).to.be.true;
@@ -15,6 +10,8 @@ describe('Station', () => {
       cy.evaluateManageWallet().then(manageWalletEvaluated => {
         expect(manageWalletEvaluated).to.be.true;
       });
+      //this is added beacuse you delete the wallet at the end but test wallet 1 setup is required by most tests to be present :D
+      cy.setupStation()
     });
     it('Test happy flow recover wallet from seed', () => {
       cy.recoverWalletFromSeed().then(recovered => {

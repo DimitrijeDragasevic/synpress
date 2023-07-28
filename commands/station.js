@@ -39,6 +39,9 @@ const station = {
   async evaluateManageWallet() {
     await playwright.evaluateManageWallet();
   },
+  async closeTabs() {
+    await playwright.close();
+  },
 };
 
 module.exports = station;

@@ -40,6 +40,14 @@ module.exports = (on, config) => {
     return arguments_;
   });
 
+  on('after:spec', async () => {
+    await station.closeTabs();
+  });
+
+  on('before:spec', async () => {
+    await station.initialSetup(null);
+  });
+
   on('task', {
     error(message) {
       console.error('\u001B[31m', 'ERROR:', message, '\u001B[0m');
