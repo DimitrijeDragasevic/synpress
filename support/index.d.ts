@@ -415,6 +415,8 @@ declare namespace Cypress {
 
     recoverWalletFromSeed(): Chainable<Subject>;
 
+    evaluateMainPage(): Chainable<Subject>;
+
     evaluateSettings(): Chainable<Subject>;
 
     evaluateManageWallet(): Chainable<Subject>;

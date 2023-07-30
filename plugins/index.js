@@ -346,6 +346,10 @@ module.exports = (on, config) => {
       await station.recoverWalletFromSeed();
       return true;
     },
+    evaluateMainPage: async () => {
+      await station.evaluateMainPage();
+      return true;
+    },
     evaluateSettings: async () => {
       await station.evaluateSettings();
       return true;

@@ -467,6 +467,65 @@ module.exports = {
   },
 
   /* -------------------------------------------------------------------------- */
+  /*                                  Main Page                                 */
+  /* -------------------------------------------------------------------------- */
+
+  // Ensures main page is loaded with all relevant elements.
+  async evaluateMainPage() {
+    /* --------------------------------- Buttons -------------------------------- */
+
+    const buttons = {
+      walletButton: {
+        buttonText: 'Test wallet 1',
+        type: 'name',
+      },
+      settingsButton: {
+        buttonText: 'SettingsIcon',
+        type: 'id',
+      },
+      sendButton: {
+        buttonText: /^Send$/,
+        type: 'element',
+      },
+      receiveButton: {
+        buttonText: /^Receive$/,
+        type: 'element',
+      },
+      buyButton: {
+        buttonText: /^Buy$/,
+        type: 'element',
+      },
+      manageButton: {
+        buttonText: 'Manage',
+        type: 'name',
+      },
+    };
+
+    for (const button in buttons) {
+      const attributes = buttons[button];
+      await this.expectButton(
+        attributes.buttonText,
+        attributes.type,
+        'button',
+        false,
+      );
+    }
+
+    /* ------------------------------ Text Elements ----------------------------- */
+
+    for (const text of [
+      'Portfolio value',
+      /\$ [\d]{1,5}\.[\d]{2}/,
+      'Send',
+      'Receive',
+      'Buy',
+      'Assets',
+    ]) {
+      await this.expectText(text);
+    }
+  },
+
+  /* -------------------------------------------------------------------------- */
   /*                                  Settings                                  */
   /* -------------------------------------------------------------------------- */
 
@@ -516,7 +575,7 @@ module.exports = {
 
     // Change to Spanish and ensure Spanish translated receive text.
     await this.selectSettings('Español', false, true);
-    await this.expectText(/Reciba/);
+    await this.expectText('Reciba');
 
     // Change to Mandarin and ensure Mandarin translated buy text.
     await this.selectSettings('Idioma Español');
