@@ -15,6 +15,10 @@ Cypress.Commands.add('setupStation', () => {
   return cy.task('setupStation');
 });
 
+Cypress.Commands.add('evaluateMainPage', () => {
+  return cy.task('evaluateMainPage');
+});
+
 Cypress.Commands.add('evaluateSettings', () => {
   return cy.task('evaluateSettings');
 });

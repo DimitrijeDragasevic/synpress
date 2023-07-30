@@ -32,6 +32,10 @@ const station = {
     await playwright.fillCreateWalletForm(walletName);
   },
 
+  async evaluateMainPage() {
+    await playwright.evaluateMainPage();
+  },
+
   async evaluateSettings() {
     await playwright.evaluateSettings();
   },
