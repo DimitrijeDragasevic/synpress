@@ -395,6 +395,43 @@ module.exports = {
   },
 
   /**
+   * A function to expect and click a button if specified to test functionality.
+   *
+   * @param {string} buttonText The name, text, asset, or test ID associated with
+   * the button.
+   * @param {string} type The type of buttonText supplied to the function.
+   * @param {string} role The role of the button element (button, link, etc.).
+   * @param {boolean} click Whether or not to click the button.
+   */
+  async expectButton(buttonText, type, role = 'button', click = true) {
+    // Assign button using buttonText based on type supplied.
+    let button;
+    if (type === 'name') {
+      button = await stationExtension.getByRole(role, { name: buttonText });
+    } else if (type === 'id') {
+      button = await stationExtension.getByTestId(buttonText);
+    } else if (type === 'element') {
+      button = await stationExtension
+        .locator('div')
+        .filter({ hasText: buttonText })
+        .getByRole(role);
+    } else if (type === 'asset') {
+      button = await stationExtension
+        .getByRole('listitem')
+        .filter({
+          hasText: new RegExp(`^${buttonText}`),
+        })
+        .getByRole(role);
+    }
+
+    await expect(button).toBeVisible();
+
+    if (click) {
+      await button.click();
+    }
+  },
+
+  /**
    * Ensures text is in document, clicks text option, and closes modal.
    *
    * @param {string} text The text to find in the document.
@@ -425,7 +462,7 @@ module.exports = {
     }
 
     if (close) {
-      await stationExtension.getByTestId('CloseIcon').click();
+      await this.expectButton('CloseIcon', 'id');
     }
   },
 
@@ -442,17 +479,13 @@ module.exports = {
    */
   async selectSettings(buttonText, initialize = true, close = false) {
     if (initialize) {
-      await stationExtension.getByTestId('SettingsIcon').click();
+      await this.expectButton('SettingsIcon', 'id');
     }
 
-    const settingsButton = await stationExtension.getByRole('button', {
-      name: buttonText,
-    });
-    await expect(settingsButton).toBeVisible();
-    await settingsButton.click();
+    await this.expectButton(buttonText, 'name');
 
     if (close) {
-      await stationExtension.getByTestId('CloseIcon').click();
+      await this.expectButton('CloseIcon', 'id');
     }
   },
 
@@ -549,23 +582,14 @@ module.exports = {
    */
   async selectManage(linkText, initialize = true, role = 'link') {
     if (initialize) {
-      await stationExtension
-        .getByRole('button', {
-          name: 'Test wallet 1',
-        })
-        .click();
-      await stationExtension
-        .getByRole('button', {
-          name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
-        })
-        .click();
+      await this.expectButton('Test wallet 1', 'name');
+      await this.expectButton(
+        'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
+        'name',
+      );
     }
 
-    const manageLink = await stationExtension.getByRole(role, {
-      name: linkText,
-    });
-    await expect(manageLink).toBeVisible();
-    await manageLink.click();
+    await this.expectButton(linkText, 'name', role);
   },
 
   // Evaluates manage wallet options and ensures proper functionality.
@@ -663,11 +687,7 @@ module.exports = {
     // Evaluate checking and unchecking the filter.
     for (const action of ['check', 'uncheck']) {
       // Open the asset management modal.
-      await stationExtension
-        .getByRole('button', {
-          name: 'Manage',
-        })
-        .click();
+      await this.expectButton('Manage', 'name');
 
       if (
         filter === 'Hide non-whitelisted' &&
@@ -712,22 +732,12 @@ module.exports = {
     // Evaluate checking and unchecking the asset.
     for (const action of ['check', 'uncheck']) {
       // Open the asset management modal.
-      await stationExtension
-        .getByRole('button', {
-          name: 'Manage',
-        })
-        .click();
+      await this.expectButton('Manage', 'name');
 
       // Click asset and close out of asset management modal.
       await this.userInput(asset);
-      await stationExtension
-        .getByRole('listitem')
-        .filter({
-          hasText: new RegExp(`^${asset}`),
-        })
-        .getByRole('button')
-        .click();
-      await stationExtension.getByTestId('CloseIcon').click();
+      await this.expectButton(asset, 'asset');
+      await this.expectButton('CloseIcon', 'id');
 
       // Evaluate if asset is properly added or removed from the asset list.
       const assetItem = await stationExtension.getByRole('article').filter({
