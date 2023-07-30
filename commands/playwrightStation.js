@@ -377,20 +377,18 @@ module.exports = {
   /**
    * Mimics a user submitting a transaction.
    *
-   * @param {string} buttonText The text displayed on the transaction confirmation
-   * button.
-   * @param {boolean} expectDisabled Whether or not the Submit button is expected
-   * to be disabled.
+   * @param {boolean} enabled Whether or not the Submit button is expected
+   * to be enabled.
    */
-  async userSubmit(buttonText = 'Submit', expectDisabled = false) {
+  async userSubmit(enabled = true) {
     const submitButton = await stationExtension.getByRole('button', {
-      name: buttonText,
+      name: 'Submit',
     });
 
-    if (expectDisabled) {
-      await expect(submitButton).toHaveAttribute('disabled', '');
-    } else {
+    if (enabled) {
       await submitButton.click();
+    } else {
+      await expect(submitButton).toHaveAttribute('disabled', '');
     }
   },
 
@@ -698,7 +696,7 @@ module.exports = {
     await this.userInput('newpassword', 'input[name="password"]');
     await this.userInput('newpassword', 'input[name="confirm"]');
     await this.userSubmit();
-    await this.userSubmit('Confirm');
+    await this.expectButton('Confirm', 'name');
 
     /* ------------------------------- Lock Wallet ------------------------------ */
 
@@ -708,7 +706,7 @@ module.exports = {
     // Expect submit to be disabled if user enters wrong password.
     await this.selectManage('Test wallet 1', false);
     await this.userInput('wrong password');
-    await this.userSubmit('Submit', true);
+    await this.userSubmit(false);
 
     // Ensure user can unlock wallet with new password.
     await this.userInput('newpassword');
@@ -721,12 +719,12 @@ module.exports = {
 
     // Expect submit to be disabled upon wrong wallet name input.
     await this.userInput('Wrong name 1');
-    await this.userSubmit('Submit', true);
+    await this.userSubmit(false);
 
     // Expect user to be able to delete wallet when correct wallet name inputted.
     await this.userInput('Test wallet 1');
     await this.userSubmit();
-    await this.userSubmit('Confirm');
+    await this.expectButton('Confirm', 'name');
     await this.expectText('Connect to Station');
   },
 
