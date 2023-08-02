@@ -54,6 +54,20 @@ const station = {
 
   async importWalletFromPrivateKey() {
     await playwright.fillRecoverWalletFromPrivateKeyForm();
+    await playwright.submitAndVerifyHomeScreen('private key');
+  },
+
+  async importWalletFromPrivateKeyInvalidKey() {
+    await playwright.fillRecoverWalletFromPrivateKeyForm('123123awe');
+    await playwright.verifyWrongPrivateKeyMessage();
+  },
+
+  async importWalletFromPrivateKeyWrongPassword() {
+    await playwright.fillRecoverWalletFromPrivateKeyForm(
+      process.env.PRIVATE_KEY,
+      '123qwer',
+    );
+    await playwright.verifyWrongPassword();
   },
 };
 

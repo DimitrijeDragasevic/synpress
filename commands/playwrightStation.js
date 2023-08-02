@@ -863,24 +863,56 @@ module.exports = {
       'input[name="password"]',
       stationExtensionPrivateKey,
     );
+  },
+
+  async verifyWrongPrivateKeyMessage() {
+    expect(await stationExtensionPrivateKey.getByText('Invalid')).isVisible();
+    await stationExtensionPrivateKey.getByText('Submit').isDisabled();
+  },
+
+  async verifyWrongPassword() {
+    await stationExtensionPrivateKey.getByText('Submit').click();
+    expect(
+      await stationExtensionPrivateKey.getByText('Incorrect password'),
+    ).isVisible();
+  },
+
+  async submitAndVerifyHomeScreen(page) {
+    // Check the value of the 'page' parameter and assign the corresponding page object variable
+    switch (page) {
+      case 'station':
+        page = stationExtension;
+        break;
+      case 'new wallet':
+        page = stationExtensionNewWallet;
+        break;
+      case 'seed':
+        page = stationExtensionSeed;
+        break;
+      case 'private key':
+        page = stationExtensionPrivateKey;
+        break;
+      case 'multi sig':
+        page = stationExtensionMultiSig;
+        break;
+      case 'ledger':
+        page = stationExtensionLedger;
+        break;
+      default:
+        throw new Error('Invalid page value');
+    }
 
     // Check if the Submit button is enabled and click it
-    await stationExtensionPrivateKey.getByText('Submit').isEnabled();
-    await stationExtensionPrivateKey.getByText('Submit').click();
+    await page.getByText('Submit').isEnabled();
+    await page.getByText('Submit').click();
 
     // Check if the text for various wallet features are visible on the page
-    expect(
-      await stationExtensionPrivateKey.getByText('Portfolio value'),
-    ).toBeVisible();
-    expect(await stationExtensionPrivateKey.getByText('Send')).toBeVisible();
-    expect(await stationExtensionPrivateKey.getByText('Receive')).toBeVisible();
-    expect(await stationExtensionPrivateKey.getByText('Buy')).toBeVisible();
+    expect(await page.getByText('Portfolio value')).toBeVisible();
+    expect(await page.getByText('Send')).toBeVisible();
+    expect(await page.getByText('Receive')).toBeVisible();
+    expect(await page.getByText('Buy')).toBeVisible();
 
     // Verify that the specific asset 'LUNA' is visible
-    expect(
-      await stationExtensionPrivateKey
-        .getByText('LUNA', { exact: true })
-        .first(),
-    ).toBeVisible();
+    expect(await page.getByText('LUNA', { exact: true }).first()).toBeVisible();
   },
 };
