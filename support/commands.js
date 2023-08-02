@@ -71,6 +71,10 @@ Cypress.Commands.add('switchToMetamaskNotification', () => {
   return cy.task('switchToMetamaskNotification');
 });
 
+Cypress.Commands.add('importWalletFromPrivateKey', () => {
+  return cy.task('importWalletFromPrivateKey');
+});
+
 // metamask commands
 
 Cypress.Commands.add('addMetamaskNetwork', network => {

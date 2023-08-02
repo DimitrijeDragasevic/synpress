@@ -362,6 +362,10 @@ module.exports = (on, config) => {
       await station.evaluateManageAssets();
       return true;
     },
+    importWalletFromPrivateKey: async () => {
+      await station.importWalletFromPrivateKey();
+      return true;
+    },
   });
 
   if (process.env.BASE_URL) {

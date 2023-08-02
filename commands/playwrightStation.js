@@ -1,5 +1,6 @@
 const log = require('debug')('synpress:playwright');
 const fetch = require('node-fetch');
+const { defineConfig } = require('@playwright/test');
 
 const {
   seedFormElements,
@@ -22,6 +23,11 @@ let stationExtensionLedger;
 let activeTabName;
 
 module.exports = {
+  config: defineConfig({
+    expect: {
+      timeout: 7000,
+    },
+  }),
   browser() {
     return browser;
   },
@@ -366,11 +372,11 @@ module.exports = {
    * @param {string} text The text to input inside of the desired text box.
    * @param {string} xpath The xpath which corresponds to the desired text box.
    */
-  async userInput(text, xpath = '') {
+  async userInput(text, xpath = '', page = stationExtension) {
     if (xpath) {
-      await stationExtension.locator(xpath).fill(text);
+      await page.locator(xpath).fill(text);
     } else {
-      await stationExtension.getByRole('textbox').fill(text);
+      await page.getByRole('textbox').fill(text);
     }
   },
 
@@ -380,8 +386,8 @@ module.exports = {
    * @param {boolean} enabled Whether or not the Submit button is expected
    * to be enabled.
    */
-  async userSubmit(enabled = true) {
-    const submitButton = await stationExtension.getByRole('button', {
+  async userSubmit(enabled = true, page = stationExtension) {
+    const submitButton = await page.getByRole('button', {
       name: 'Submit',
     });
 
@@ -823,5 +829,58 @@ module.exports = {
     // Evaluate the application of asset management filters.
     await this.evaluateFilter('Hide non-whitelisted', 'ATOM-OSMO LP');
     await this.evaluateFilter('Hide low-balance', 'axlUSDT');
+  },
+
+  /**
+   * Fills and submits the form to recover a wallet from a private key.
+   * Validates the presence of expected elements after form submission.
+   *
+   * @param {string} privateKey The private key used to recover the wallet (default to process.env.PRIVATE_KEY).
+   * @param {string} password The password used to secure the wallet (default to 'Testtest123!').
+   */
+  async fillRecoverWalletFromPrivateKeyForm(
+    privateKey = process.env.PRIVATE_KEY,
+    password = 'Testtest123!',
+  ) {
+    // Assign the page related to private key input
+    await this.assignPrivateKeyPage();
+
+    // Check if the text 'Import from private key' is visible on the page
+    expect(
+      await stationExtensionPrivateKey.getByText('Import from private key'),
+    ).toBeVisible();
+
+    // Fill in the private key
+    await this.userInput(
+      privateKey,
+      'textarea[name="key"]',
+      stationExtensionPrivateKey,
+    );
+
+    // Fill in the password
+    await this.userInput(
+      password,
+      'input[name="password"]',
+      stationExtensionPrivateKey,
+    );
+
+    // Check if the Submit button is enabled and click it
+    await stationExtensionPrivateKey.getByText('Submit').isEnabled();
+    await stationExtensionPrivateKey.getByText('Submit').click();
+
+    // Check if the text for various wallet features are visible on the page
+    expect(
+      await stationExtensionPrivateKey.getByText('Portfolio value'),
+    ).toBeVisible();
+    expect(await stationExtensionPrivateKey.getByText('Send')).toBeVisible();
+    expect(await stationExtensionPrivateKey.getByText('Receive')).toBeVisible();
+    expect(await stationExtensionPrivateKey.getByText('Buy')).toBeVisible();
+
+    // Verify that the specific asset 'LUNA' is visible
+    expect(
+      await stationExtensionPrivateKey
+        .getByText('LUNA', { exact: true })
+        .first(),
+    ).toBeVisible();
   },
 };

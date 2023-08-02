@@ -51,6 +51,10 @@ const station = {
   async closeTabs() {
     await playwright.close();
   },
+
+  async importWalletFromPrivateKey() {
+    await playwright.fillRecoverWalletFromPrivateKeyForm();
+  },
 };
 
 module.exports = station;

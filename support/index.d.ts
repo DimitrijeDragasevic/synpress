@@ -423,6 +423,8 @@ declare namespace Cypress {
 
     evaluateManageAssets(): Chainable<Subject>;
 
+    importWalletFromPrivateKey(): Chainable<Subject>;
+
     /**
      * Get transaction status from Etherscan API
      * @example
