@@ -12,9 +12,9 @@ const station = {
     }
 
     await playwright.assignStartPage();
-    await playwright.assignSeedPage();
-    await playwright.setupQaWalletAndVerify();
-    return true;
+    // await playwright.assignSeedPage();
+    // await playwright.setupQaWalletAndVerify();
+    // return true;
   },
   async recoverWalletFromSeed() {
     await playwright.goToManageWalletsMenuFromHome();

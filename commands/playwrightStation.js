@@ -84,7 +84,9 @@ module.exports = {
   async assignStartPage() {
     let stationExtensionUrl;
     let serviceWorkers = await browser.contexts()[0].serviceWorkers();
+
     for (let worker of serviceWorkers) {
+
       const url = worker._initializer.url;
 
       // Check if the URL contains 'background.js'
@@ -95,7 +97,10 @@ module.exports = {
     }
 
     const blankPage = await browser.contexts()[0].newPage();
+    console.log('Before:', (await browser.contexts()[0].pages()).length);
     await blankPage.goto(stationExtensionUrl);
+    console.log('After:', (await browser.contexts()[0].pages()).length);
+
     let pages = await browser.contexts()[0].pages();
     pages.forEach(page => {
       if (page.url().includes('index.html')) {

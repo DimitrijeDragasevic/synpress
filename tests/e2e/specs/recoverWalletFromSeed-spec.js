@@ -2,6 +2,7 @@
 describe('Station', () => {
   context('Test commands', () => {
     it('Evaluate main page', () => {
+      cy.wait(100000000)
       cy.evaluateMainPage().then(mainPageEvaluated => {
         expect(mainPageEvaluated).to.be.true;
       });
