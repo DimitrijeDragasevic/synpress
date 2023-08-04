@@ -4,6 +4,7 @@ const playwrightStation = require('../commands/playwrightStation');
 const metamask = require('../commands/metamask');
 const station = require('../commands/station');
 const etherscan = require('../commands/etherscan');
+const path = require('path');
 
 /**
  * @type {Cypress.PluginConfig}
@@ -32,11 +33,12 @@ module.exports = (on, config) => {
       }
     }
 
-    if (!process.env.SKIP_TERRASTATION_INSTALL) {
-      const stationPath = await helpers.prepareStation('7.4.1.1');
-      arguments_.extensions.push(stationPath);
-    }
+    // if (!process.env.SKIP_TERRASTATION_INSTALL) {
+    //   const stationPath = await helpers.prepareStation('7.4.1.1');
+    //   arguments_.extensions.push(stationPath);
+    // }
 
+    arguments_.extensions.push('PATH TO EXTENSION');
     return arguments_;
   });
 
@@ -45,6 +47,7 @@ module.exports = (on, config) => {
   });
 
   on('before:spec', async () => {
+    console.log("called twice")
     await station.initialSetup(null);
   });
 
