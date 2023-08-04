@@ -1,7 +1,6 @@
 const log = require('debug')('synpress:metamask');
 const playwright = require('./playwrightStation');
 
-const elements = require('../pages/station/main-page');
 
 const station = {
   async initialSetup(playwrightInstance) {
@@ -9,8 +8,8 @@ const station = {
       await playwright.init(playwrightInstance);
     } else {
       await playwright.init();
-    }
-
+    } 
+    
     await playwright.assignStartPage();
     await playwright.assignSeedPage();
     await playwright.setupQaWalletAndVerify();

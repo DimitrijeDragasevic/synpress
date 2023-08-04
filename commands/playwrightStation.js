@@ -80,56 +80,86 @@ module.exports = {
     let serviceWorkers = await browser.contexts()[0].serviceWorkers();
     for (let worker of serviceWorkers) {
       const url = worker._initializer.url;
-
+  
       // Check if the URL contains 'background.js'
       if (url.includes('background.js')) {
         stationExtensionUrl = url.replace('background.js', 'index.html#/');
         break; // Exit the loop once the correct service worker is found
       }
     }
-
-    const blankPage = await browser.contexts()[0].newPage();
-    await blankPage.goto(stationExtensionUrl);
-    let pages = await browser.contexts()[0].pages();
-    pages.forEach(page => {
-      if (page.url().includes('index.html')) {
-        stationExtension = page;
+    if (stationExtension) {
+      console.log("stationExtension already assigned.");
+      return; // Exit the function if stationExtension already has a value
+    }
+  
+    let isUrlFoundInPages = false;
+    const pages = await browser.contexts()[0].pages();
+    for (const page of pages) {
+      if (page.url().includes(stationExtensionUrl)) {
+        isUrlFoundInPages = true;
+        break;
       }
-    });
+    }
+  
+    if (!isUrlFoundInPages) {
+      const blankPage = await browser.contexts()[0].newPage();
+      await blankPage.goto(stationExtensionUrl);
+      stationExtension = blankPage;
+      console.log("Assigned stationExtension.");
+    } else {
+      console.log("Page with stationExtensionUrl already exists.");
+    }
   },
+  
+
   async waitForNewPageWithUrlPart(urlPart) {
     return new Promise(resolve => {
-      browser.contexts()[0].on('page', newPage => {
-        newPage.url().includes(urlPart) && resolve(newPage);
+      browser.contexts()[0].once('page', newPage => {
+        if (newPage.url().includes(urlPart)) {
+          resolve(newPage);
+        }
       });
     });
   },
+  async assignPage(urlPart, buttonText) {
+    const context = browser.contexts()[0];
+    const pages = await context.pages();
+    for (const page of pages) {
+      if (page.url().includes(urlPart)) {
+        await page.reload();
+        return page;
+      }
+    }
+  
+    const pagePromise = this.waitForNewPageWithUrlPart(urlPart);
+    await stationExtension.getByText(buttonText).click();
+    const pageVar = await pagePromise;
+    await pageVar.reload();
+    return pageVar;
+  },
+  
   async assignNewWalletPage() {
-    const newWalletPagePromise = this.waitForNewPageWithUrlPart('auth/new');
-    await stationExtension.getByText('New wallet').click();
-    stationExtensionNewWallet = await newWalletPagePromise;
+    stationExtensionNewWallet = await this.assignPage('auth/new', 'New wallet');
   },
+  
   async assignSeedPage() {
-    const seedPagePromise = this.waitForNewPageWithUrlPart('auth/recover');
-    await stationExtension.getByText('Import from seed phrase').click();
-    stationExtensionSeed = await seedPagePromise;
+    stationExtensionSeed = await this.assignPage('auth/recover', 'Import from seed phrase');
   },
-  async assignPrivateKeyPage() {
-    const privateKeyPagePromise = this.waitForNewPageWithUrlPart('auth/import');
-    await stationExtension.getByText('Import from private key').click();
-    stationExtensionPrivateKey = await privateKeyPagePromise;
+  
+  async  assignPrivateKeyPage() {
+    stationExtensionPrivateKey = await this.assignPage('auth/import', 'Import from private key');
   },
-  async assignMultiSigPage() {
-    const multisigWalletPagePromise =
-      this.waitForNewPageWithUrlPart('auth/multisig/new');
-    await stationExtension.getByText('New multisig wallet').click();
-    stationExtensionMultiSig = await multisigWalletPagePromise;
+  
+  async  assignMultiSigPage() {
+    stationExtensionMultiSig = await this.assignPage('auth/multisig/new', 'New multisig wallet');
   },
-  async assignLedgerPage() {
-    const ledgerPagePromise = this.waitForNewPageWithUrlPart('auth/ledger');
-    await stationExtension.getByText('Access with ledger').click();
-    stationExtensionLedger = await ledgerPagePromise;
+  
+  async  assignLedgerPage() {
+    stationExtensionLedger = await this.assignPage('auth/ledger', 'Access with ledger');
   },
+  
+  
+  
   async clear() {
     browser = null;
     return true;
@@ -153,11 +183,21 @@ module.exports = {
   },
 
   async setupQaWalletAndVerify() {
-    await this.fillSeedForm('Test wallet 1', 'Testtest123!');
-    await this.bringToFrontAndReload(stationExtension);
-    await this.verifyFirstWalletAdded();
+      await this.fillSeedForm('Test wallet 1', 'Testtest123!');
+      await this.bringToFrontAndReload(stationExtension);
+      await this.verifyFirstWalletAdded();
   },
+
+  async checkIfWalletSetup() {
+     return await expect(await stationExtensionSeed.getByTestId('manage-wallets-button')).toBeVisible();  
+  },
+
   async fillSeedForm(walletName, password, seed = process.env.SEED_PHRASE) {
+    // const button = await stationExtensionSeed.$('button:text("Test wallet 1")');
+    // console.log(button)
+    // if (button) {
+    //   return;
+    // } 
     await stationExtensionSeed.bringToFront();
     await stationExtensionSeed.waitForLoadState();
     await stationExtensionSeed.fill(seedFormElements.inputName, walletName);

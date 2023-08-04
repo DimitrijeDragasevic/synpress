@@ -32,7 +32,7 @@ module.exports = defineConfig({
   e2e: {
     testIsolation: false,
     setupNodeEvents,
-    baseUrl: 'http://localhost:3000',
+    baseUrl: 'https://www.google.com/',
     specPattern: 'tests/e2e/specs/**/*.{js,jsx,ts,tsx}',
     supportFile,
   },
