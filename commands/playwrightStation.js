@@ -86,7 +86,6 @@ module.exports = {
     let serviceWorkers = await browser.contexts()[0].serviceWorkers();
 
     for (let worker of serviceWorkers) {
-
       const url = worker._initializer.url;
 
       // Check if the URL contains 'background.js'
@@ -97,9 +96,7 @@ module.exports = {
     }
 
     const blankPage = await browser.contexts()[0].newPage();
-    console.log('Before:', (await browser.contexts()[0].pages()).length);
     await blankPage.goto(stationExtensionUrl);
-    console.log('After:', (await browser.contexts()[0].pages()).length);
 
     let pages = await browser.contexts()[0].pages();
     pages.forEach(page => {
@@ -181,8 +178,10 @@ module.exports = {
     await stationExtensionSeed.click(seedFormElements.submitButton),
       await stationExtensionSeed.waitForURL('**/recover#3');
 
-    expect(await stationExtensionSeed.getByTestId('DoneAllIcon')).toBeVisible();
-    expect(
+    await expect(
+      await stationExtensionSeed.getByTestId('DoneAllIcon'),
+    ).toBeVisible();
+    await expect(
       stationExtensionSeed.getByRole('button', {
         name: 'Connect',
         exact: true,
@@ -194,39 +193,40 @@ module.exports = {
   },
 
   async verifyFirstWalletAdded() {
-    expect(
+    await expect(
       await stationExtension.getByRole('button', {
         name: 'Test wallet 1',
       }),
     ).toBeVisible();
     await stationExtension.getByText('Test wallet 1').click();
-    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
-    expect(
+    await expect(
+      await stationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
+    await expect(
       await stationExtension.getByRole('button', {
         name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
       }),
     ).toBeVisible();
-    expect(await stationExtension.getByText('Add a wallet')).toBeVisible();
+    await expect(
+      await stationExtension.getByText('Add a wallet'),
+    ).toBeVisible();
     await stationExtension.click(manageWalletsForm.manageWalletsCloseButton);
   },
 
   async goToManageWalletsMenuFromHome() {
-    await stationExtension
-      .getByRole('button', { name: 'Test wallet 1' })
-      .click();
-    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
-    expect(
-      await stationExtension.getByRole('button', {
-        name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
-      }),
-    );
+    await this.expectButton('Test wallet 1', 'name');
+    await expect(
+      await stationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
     await stationExtension
       .getByRole('button', { name: 'Add a wallet' })
       .click();
   },
 
   async verifyElementsManageWalletsForm() {
-    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
+    await expect(
+      await stationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
     await expect(
       await this.getButtonByText(stationExtension, 'New wallet'),
     ).toBeVisible();
@@ -302,10 +302,10 @@ module.exports = {
     await stationExtensionNewWallet.click(createWalletElements.submitButton);
 
     await stationExtensionNewWallet.waitForURL('**/new#3');
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByTestId('DoneAllIcon'),
     ).toBeVisible();
-    expect(
+    await expect(
       stationExtensionNewWallet.getByRole('button', {
         name: 'Connect',
         exact: true,
@@ -315,30 +315,38 @@ module.exports = {
       .getByRole('button', { name: 'Connect', exact: true })
       .click();
 
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByRole('button', {
         name: walletName,
       }),
     ).toBeVisible();
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByText('Portfolio value'),
     ).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Send')).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Receive')).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Buy')).toBeVisible();
-    expect(
+    await expect(
+      await stationExtensionNewWallet.getByText('Send'),
+    ).toBeVisible();
+    await expect(
+      await stationExtensionNewWallet.getByText('Receive'),
+    ).toBeVisible();
+    await expect(
+      await stationExtensionNewWallet.getByText('Buy'),
+    ).toBeVisible();
+    await expect(
       await stationExtensionNewWallet.getByText('0').first(),
     ).toBeVisible();
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByText('.00', { exact: true }).first(),
     ).toBeVisible();
-    expect(
+    await expect(
       await stationExtensionNewWallet
         .getByText('LUNA', { exact: true })
         .first(),
     ).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('0').last()).toBeVisible();
-    expect(
+    await expect(
+      await stationExtensionNewWallet.getByText('0').last(),
+    ).toBeVisible();
+    await expect(
       await stationExtensionNewWallet.getByText('.00', { exact: true }).last(),
     ).toBeVisible();
   },
@@ -851,7 +859,7 @@ module.exports = {
     await this.assignPrivateKeyPage();
 
     // Check if the text 'Import from private key' is visible on the page
-    expect(
+    await expect(
       await stationExtensionPrivateKey.getByText('Import from private key'),
     ).toBeVisible();
 
@@ -871,15 +879,17 @@ module.exports = {
   },
 
   async verifyWrongPrivateKeyMessage() {
-    expect(await stationExtensionPrivateKey.getByText('Invalid')).isVisible();
+    await expect(
+      await stationExtensionPrivateKey.getByText('Invalid'),
+    ).toBeVisible();
     await stationExtensionPrivateKey.getByText('Submit').isDisabled();
   },
 
   async verifyWrongPassword() {
     await stationExtensionPrivateKey.getByText('Submit').click();
-    expect(
+    await expect(
       await stationExtensionPrivateKey.getByText('Incorrect password'),
-    ).isVisible();
+    ).toBeVisible();
   },
 
   async submitAndVerifyHomeScreen(page) {
@@ -912,12 +922,14 @@ module.exports = {
     await page.getByText('Submit').click();
 
     // Check if the text for various wallet features are visible on the page
-    expect(await page.getByText('Portfolio value')).toBeVisible();
-    expect(await page.getByText('Send')).toBeVisible();
-    expect(await page.getByText('Receive')).toBeVisible();
-    expect(await page.getByText('Buy')).toBeVisible();
+    await expect(await page.getByText('Portfolio value')).toBeVisible();
+    await expect(await page.getByText('Send')).toBeVisible();
+    await expect(await page.getByText('Receive')).toBeVisible();
+    await expect(await page.getByText('Buy')).toBeVisible();
 
     // Verify that the specific asset 'LUNA' is visible
-    expect(await page.getByText('LUNA', { exact: true }).first()).toBeVisible();
+    await expect(
+      await page.getByText('LUNA', { exact: true }).first(),
+    ).toBeVisible();
   },
 };

@@ -425,6 +425,10 @@ declare namespace Cypress {
 
     importWalletFromPrivateKey(): Chainable<Subject>;
 
+    importWalletFromPrivateKeyInvalidKey(): Chainable<Subject>;
+    
+    importWalletFromPrivateKeyWrongPassword(): Chainable<Subject>;
+
     /**
      * Get transaction status from Etherscan API
      * @example

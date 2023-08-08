@@ -75,6 +75,14 @@ Cypress.Commands.add('importWalletFromPrivateKey', () => {
   return cy.task('importWalletFromPrivateKey');
 });
 
+Cypress.Commands.add('importWalletFromPrivateKeyInvalidKey', () => {
+  return cy.task('importWalletFromPrivateKeyInvalidKey');
+});
+
+Cypress.Commands.add('importWalletFromPrivateKeyWrongPassword', () => {
+  return cy.task('importWalletFromPrivateKeyWrongPassword');
+});
+
 // metamask commands
 
 Cypress.Commands.add('addMetamaskNetwork', network => {
