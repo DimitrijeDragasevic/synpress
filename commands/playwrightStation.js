@@ -1,5 +1,6 @@
 const log = require('debug')('synpress:playwright');
 const fetch = require('node-fetch');
+const { defineConfig } = require('@playwright/test');
 
 const {
   seedFormElements,
@@ -22,6 +23,11 @@ let stationExtensionLedger;
 let activeTabName;
 
 module.exports = {
+  config: defineConfig({
+    expect: {
+      timeout: 7000,
+    },
+  }),
   browser() {
     return browser;
   },
@@ -78,6 +84,7 @@ module.exports = {
   async assignStartPage() {
     let stationExtensionUrl;
     let serviceWorkers = await browser.contexts()[0].serviceWorkers();
+
     for (let worker of serviceWorkers) {
       const url = worker._initializer.url;
 
@@ -90,6 +97,7 @@ module.exports = {
 
     const blankPage = await browser.contexts()[0].newPage();
     await blankPage.goto(stationExtensionUrl);
+
     let pages = await browser.contexts()[0].pages();
     pages.forEach(page => {
       if (page.url().includes('index.html')) {
@@ -170,8 +178,10 @@ module.exports = {
     await stationExtensionSeed.click(seedFormElements.submitButton),
       await stationExtensionSeed.waitForURL('**/recover#3');
 
-    expect(await stationExtensionSeed.getByTestId('DoneAllIcon')).toBeVisible();
-    expect(
+    await expect(
+      await stationExtensionSeed.getByTestId('DoneAllIcon'),
+    ).toBeVisible();
+    await expect(
       stationExtensionSeed.getByRole('button', {
         name: 'Connect',
         exact: true,
@@ -183,39 +193,40 @@ module.exports = {
   },
 
   async verifyFirstWalletAdded() {
-    expect(
+    await expect(
       await stationExtension.getByRole('button', {
         name: 'Test wallet 1',
       }),
     ).toBeVisible();
     await stationExtension.getByText('Test wallet 1').click();
-    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
-    expect(
+    await expect(
+      await stationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
+    await expect(
       await stationExtension.getByRole('button', {
         name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
       }),
     ).toBeVisible();
-    expect(await stationExtension.getByText('Add a wallet')).toBeVisible();
+    await expect(
+      await stationExtension.getByText('Add a wallet'),
+    ).toBeVisible();
     await stationExtension.click(manageWalletsForm.manageWalletsCloseButton);
   },
 
   async goToManageWalletsMenuFromHome() {
-    await stationExtension
-      .getByRole('button', { name: 'Test wallet 1' })
-      .click();
-    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
-    expect(
-      await stationExtension.getByRole('button', {
-        name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
-      }),
-    );
+    await this.expectButton('Test wallet 1', 'name');
+    await expect(
+      await stationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
     await stationExtension
       .getByRole('button', { name: 'Add a wallet' })
       .click();
   },
 
   async verifyElementsManageWalletsForm() {
-    expect(await stationExtension.getByText('Manage Wallets')).toBeVisible();
+    await expect(
+      await stationExtension.getByText('Manage Wallets'),
+    ).toBeVisible();
     await expect(
       await this.getButtonByText(stationExtension, 'New wallet'),
     ).toBeVisible();
@@ -291,10 +302,10 @@ module.exports = {
     await stationExtensionNewWallet.click(createWalletElements.submitButton);
 
     await stationExtensionNewWallet.waitForURL('**/new#3');
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByTestId('DoneAllIcon'),
     ).toBeVisible();
-    expect(
+    await expect(
       stationExtensionNewWallet.getByRole('button', {
         name: 'Connect',
         exact: true,
@@ -304,30 +315,38 @@ module.exports = {
       .getByRole('button', { name: 'Connect', exact: true })
       .click();
 
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByRole('button', {
         name: walletName,
       }),
     ).toBeVisible();
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByText('Portfolio value'),
     ).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Send')).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Receive')).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('Buy')).toBeVisible();
-    expect(
+    await expect(
+      await stationExtensionNewWallet.getByText('Send'),
+    ).toBeVisible();
+    await expect(
+      await stationExtensionNewWallet.getByText('Receive'),
+    ).toBeVisible();
+    await expect(
+      await stationExtensionNewWallet.getByText('Buy'),
+    ).toBeVisible();
+    await expect(
       await stationExtensionNewWallet.getByText('0').first(),
     ).toBeVisible();
-    expect(
+    await expect(
       await stationExtensionNewWallet.getByText('.00', { exact: true }).first(),
     ).toBeVisible();
-    expect(
+    await expect(
       await stationExtensionNewWallet
         .getByText('LUNA', { exact: true })
         .first(),
     ).toBeVisible();
-    expect(await stationExtensionNewWallet.getByText('0').last()).toBeVisible();
-    expect(
+    await expect(
+      await stationExtensionNewWallet.getByText('0').last(),
+    ).toBeVisible();
+    await expect(
       await stationExtensionNewWallet.getByText('.00', { exact: true }).last(),
     ).toBeVisible();
   },
@@ -366,11 +385,11 @@ module.exports = {
    * @param {string} text The text to input inside of the desired text box.
    * @param {string} xpath The xpath which corresponds to the desired text box.
    */
-  async userInput(text, xpath = '') {
+  async userInput(text, xpath = '', page = stationExtension) {
     if (xpath) {
-      await stationExtension.locator(xpath).fill(text);
+      await page.locator(xpath).fill(text);
     } else {
-      await stationExtension.getByRole('textbox').fill(text);
+      await page.getByRole('textbox').fill(text);
     }
   },
 
@@ -380,8 +399,8 @@ module.exports = {
    * @param {boolean} enabled Whether or not the Submit button is expected
    * to be enabled.
    */
-  async userSubmit(enabled = true) {
-    const submitButton = await stationExtension.getByRole('button', {
+  async userSubmit(enabled = true, page = stationExtension) {
+    const submitButton = await page.getByRole('button', {
       name: 'Submit',
     });
 
@@ -823,5 +842,94 @@ module.exports = {
     // Evaluate the application of asset management filters.
     await this.evaluateFilter('Hide non-whitelisted', 'ATOM-OSMO LP');
     await this.evaluateFilter('Hide low-balance', 'axlUSDT');
+  },
+
+  /**
+   * Fills and submits the form to recover a wallet from a private key.
+   * Validates the presence of expected elements after form submission.
+   *
+   * @param {string} privateKey The private key used to recover the wallet (default to process.env.PRIVATE_KEY).
+   * @param {string} password The password used to secure the wallet (default to 'Testtest123!').
+   */
+  async fillRecoverWalletFromPrivateKeyForm(
+    privateKey = process.env.PRIVATE_KEY,
+    password = 'Testtest123!',
+  ) {
+    // Assign the page related to private key input
+    await this.assignPrivateKeyPage();
+
+    // Check if the text 'Import from private key' is visible on the page
+    await expect(
+      await stationExtensionPrivateKey.getByText('Import from private key'),
+    ).toBeVisible();
+
+    // Fill in the private key
+    await this.userInput(
+      privateKey,
+      'textarea[name="key"]',
+      stationExtensionPrivateKey,
+    );
+
+    // Fill in the password
+    await this.userInput(
+      password,
+      'input[name="password"]',
+      stationExtensionPrivateKey,
+    );
+  },
+
+  async verifyWrongPrivateKeyMessage() {
+    await expect(
+      await stationExtensionPrivateKey.getByText('Invalid'),
+    ).toBeVisible();
+    await stationExtensionPrivateKey.getByText('Submit').isDisabled();
+  },
+
+  async verifyWrongPassword() {
+    await stationExtensionPrivateKey.getByText('Submit').click();
+    await expect(
+      await stationExtensionPrivateKey.getByText('Incorrect password'),
+    ).toBeVisible();
+  },
+
+  async submitAndVerifyHomeScreen(page) {
+    // Check the value of the 'page' parameter and assign the corresponding page object variable
+    switch (page) {
+      case 'station':
+        page = stationExtension;
+        break;
+      case 'new wallet':
+        page = stationExtensionNewWallet;
+        break;
+      case 'seed':
+        page = stationExtensionSeed;
+        break;
+      case 'private key':
+        page = stationExtensionPrivateKey;
+        break;
+      case 'multi sig':
+        page = stationExtensionMultiSig;
+        break;
+      case 'ledger':
+        page = stationExtensionLedger;
+        break;
+      default:
+        throw new Error('Invalid page value');
+    }
+
+    // Check if the Submit button is enabled and click it
+    await page.getByText('Submit').isEnabled();
+    await page.getByText('Submit').click();
+
+    // Check if the text for various wallet features are visible on the page
+    await expect(await page.getByText('Portfolio value')).toBeVisible();
+    await expect(await page.getByText('Send')).toBeVisible();
+    await expect(await page.getByText('Receive')).toBeVisible();
+    await expect(await page.getByText('Buy')).toBeVisible();
+
+    // Verify that the specific asset 'LUNA' is visible
+    await expect(
+      await page.getByText('LUNA', { exact: true }).first(),
+    ).toBeVisible();
   },
 };

@@ -1,4 +1,3 @@
-const log = require('debug')('synpress:metamask');
 const playwright = require('./playwrightStation');
 
 const elements = require('../pages/station/main-page');
@@ -50,6 +49,24 @@ const station = {
 
   async closeTabs() {
     await playwright.close();
+  },
+
+  async importWalletFromPrivateKey() {
+    await playwright.fillRecoverWalletFromPrivateKeyForm();
+    await playwright.submitAndVerifyHomeScreen('private key');
+  },
+
+  async importWalletFromPrivateKeyInvalidKey() {
+    await playwright.fillRecoverWalletFromPrivateKeyForm('123123awe');
+    await playwright.verifyWrongPrivateKeyMessage();
+  },
+
+  async importWalletFromPrivateKeyWrongPassword() {
+    await playwright.fillRecoverWalletFromPrivateKeyForm(
+      process.env.PRIVATE_KEY_TWO,
+      '123qwer',
+    );
+    await playwright.verifyWrongPassword();
   },
 };
 

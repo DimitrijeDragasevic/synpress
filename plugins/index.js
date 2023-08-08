@@ -4,6 +4,7 @@ const playwrightStation = require('../commands/playwrightStation');
 const metamask = require('../commands/metamask');
 const station = require('../commands/station');
 const etherscan = require('../commands/etherscan');
+const path = require('path');
 
 /**
  * @type {Cypress.PluginConfig}
@@ -36,7 +37,7 @@ module.exports = (on, config) => {
       const stationPath = await helpers.prepareStation('7.4.1.1');
       arguments_.extensions.push(stationPath);
     }
-
+    
     return arguments_;
   });
 
@@ -360,6 +361,18 @@ module.exports = (on, config) => {
     },
     evaluateManageAssets: async () => {
       await station.evaluateManageAssets();
+      return true;
+    },
+    importWalletFromPrivateKey: async () => {
+      await station.importWalletFromPrivateKey();
+      return true;
+    },
+    importWalletFromPrivateKeyInvalidKey: async () => {
+      await station.importWalletFromPrivateKeyInvalidKey();
+      return true;
+    },
+    importWalletFromPrivateKeyWrongPassword: async () => {
+      await station.importWalletFromPrivateKeyWrongPassword();
       return true;
     },
   });

@@ -17,6 +17,14 @@ if (!process.env.SEED_PHRASE) {
   throw new Error('Please provide SEED_PHRASE');
 }
 
+if (!process.env.PRIVATE_KEY) {
+  throw new Error('Please provide the required private key');
+}
+
+if (!process.env.PRIVATE_KEY_TWO) {
+  throw new Error('Please provide the required second private key');
+}
+
 if (process.env.SYNPRESS_LOCAL_TEST) {
   log('Loading .env config file from root folder');
   require('dotenv').config();
