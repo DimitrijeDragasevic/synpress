@@ -11,6 +11,8 @@ declare namespace Cypress {
 
     createWallet(walletName: string): Chainable<Subject>;
 
+    createMultiSigWallet(addresses?: string[], threshold?: string): Chainable<Subject>;
+
     initPlaywrightStation(): Chainable<boolean>;
     /**
      * Assign currently open tabs with playwright

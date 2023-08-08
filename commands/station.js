@@ -68,6 +68,17 @@ const station = {
     );
     await playwright.verifyWrongPassword();
   },
+
+  async createMultiSigWallet(
+    addresses = [
+      'terra1u28fgu0p99eh9xc4623k6cw6qmfdnl9un23yxs',
+      'terra10detxcnq49r3nnze7zuqprl7yqdh34fulqtakw',
+    ],
+    threshold = '2',
+  ) {
+    await playwright.goToManageWalletsMenuFromHome();
+    return await playwright.createMutliSigWallet(addresses, threshold);
+  },
 };
 
 module.exports = station;

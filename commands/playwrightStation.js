@@ -932,4 +932,90 @@ module.exports = {
       await page.getByText('LUNA', { exact: true }).first(),
     ).toBeVisible();
   },
+
+  async createMutliSigWallet(addresses, threshold) {
+    await this.assignMultiSigPage();
+    const DEFAULT_ADDRESS_COUNT = 3;
+    const currentAddressCount = addresses.length;
+    await expect(
+      stationExtensionMultiSig.getByText('New multisig wallet').last(),
+    ).toBeVisible();
+    await expect(
+      stationExtensionMultiSig.locator('[data-testid="RemoveIcon"]').first(),
+    ).toBeVisible();
+    await expect(
+      stationExtensionMultiSig.locator('[data-testid="AddIcon"]'),
+    ).toBeVisible();
+
+    if (currentAddressCount < DEFAULT_ADDRESS_COUNT) {
+      const numberOfClicks = DEFAULT_ADDRESS_COUNT - currentAddressCount;
+      for (let i = 0; i < numberOfClicks; i++) {
+        await stationExtensionMultiSig
+          .locator('[data-testid="RemoveIcon"]')
+          .first()
+          .click();
+      }
+    } else if (currentAddressCount > DEFAULT_ADDRESS_COUNT) {
+      const numberOfClicks = currentAddressCount - DEFAULT_ADDRESS_COUNT;
+      for (let i = 0; i < numberOfClicks; i++) {
+        await stationExtensionMultiSig.click('[data-testid="AddIcon"]');
+      }
+    }
+
+    for (let i = 0; i < currentAddressCount; i++) {
+      await this.userInput(
+        addresses[i],
+        `[name="addresses.${i}.value"]`,
+        stationExtensionMultiSig,
+      );
+    }
+
+    await this.userInput(
+      threshold,
+      '[name="threshold"]',
+      stationExtensionMultiSig,
+    );
+    await this.userSubmit(true, stationExtensionMultiSig);
+    await this.userInput(
+      'MultiSig wallet',
+      '[name="name"]',
+      stationExtensionMultiSig,
+    );
+
+    await this.userSubmit(true, stationExtensionMultiSig);
+
+    await expect(
+      await stationExtensionMultiSig.getByTestId('DoneAllIcon'),
+    ).toBeVisible();
+    await expect(
+      stationExtensionMultiSig.getByRole('button', {
+        name: 'Connect',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await stationExtensionMultiSig
+      .getByRole('button', { name: 'Connect', exact: true })
+      .click();
+
+    await this.verifyHomePage(stationExtensionMultiSig);
+    return true;
+  },
+
+  async verifyHomePage(page = stationExtension) {
+    await expect(await page.getByText('Portfolio value')).toBeVisible();
+    await expect(await page.getByText('Send')).toBeVisible();
+    await expect(await page.getByText('Receive')).toBeVisible();
+    await expect(await page.getByText('Buy')).toBeVisible();
+    await expect(await page.getByText('0').first()).toBeVisible();
+    await expect(
+      await page.getByText('.00', { exact: true }).first(),
+    ).toBeVisible();
+    await expect(
+      await page.getByText('LUNA', { exact: true }).first(),
+    ).toBeVisible();
+    await expect(await page.getByText('0').last()).toBeVisible();
+    await expect(
+      await page.getByText('.00', { exact: true }).last(),
+    ).toBeVisible();
+  },
 };
