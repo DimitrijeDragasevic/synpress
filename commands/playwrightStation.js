@@ -9,6 +9,7 @@ const {
 } = require('../pages/station/seed-page');
 
 const { createWalletElements } = require('../pages/station/create-wallet-page');
+const { flare } = require('@wagmi/chains');
 
 const expect = require('@playwright/test').expect;
 
@@ -420,20 +421,20 @@ module.exports = {
    * @param {string} role The role of the button element (button, link, etc.).
    * @param {boolean} click Whether or not to click the button.
    */
-  async expectButton(buttonText, type, role = 'button', click = true) {
+  async expectButton(buttonText, type, role = 'button', click = true, page = stationExtension) {
     // Assign button using buttonText based on type supplied.
     let button;
     if (type === 'name') {
-      button = await stationExtension.getByRole(role, { name: buttonText });
+      button = await page.getByRole(role, { name: buttonText });
     } else if (type === 'id') {
-      button = await stationExtension.getByTestId(buttonText);
+      button = await page.getByTestId(buttonText);
     } else if (type === 'element') {
-      button = await stationExtension
+      button = await page
         .locator('div')
         .filter({ hasText: buttonText })
         .getByRole(role);
     } else if (type === 'asset') {
-      button = await stationExtension
+      button = await page
         .getByRole('listitem')
         .filter({
           hasText: new RegExp(`^${buttonText}`),
@@ -456,16 +457,16 @@ module.exports = {
    * @param {boolean} close Whether or not to close out of the settings modal.
    * @param {boolean} heading Whether or not the text has a heading role.
    */
-  async expectText(text, click = false, close = false, heading = false) {
+  async expectText(text, click = false, close = false, heading = false, page = stationExtension) {
     let textComponent;
     if (heading) {
-      textComponent = await stationExtension
+      textComponent = await page
         .getByRole('heading', {
           name: text,
         })
         .first();
     } else {
-      textComponent = await stationExtension
+      textComponent = await page
         .getByText(text, {
           exact: true,
         })
@@ -488,12 +489,12 @@ module.exports = {
   /* -------------------------------------------------------------------------- */
 
   // Ensures main page is loaded with all relevant elements.
-  async evaluateMainPage() {
+  async evaluateMainPage(page = stationExtension, buttonName = 'Test wallet 1') {
     /* --------------------------------- Buttons -------------------------------- */
 
     const buttons = {
       walletButton: {
-        buttonText: 'Test wallet 1',
+        buttonText: buttonName,
         type: 'name',
       },
       settingsButton: {
@@ -525,6 +526,7 @@ module.exports = {
         attributes.type,
         'button',
         false,
+        page
       );
     }
 
@@ -538,7 +540,7 @@ module.exports = {
       'Buy',
       'Assets',
     ]) {
-      await this.expectText(text);
+      await this.expectText(text, false, false, false, page);
     }
   },
 
@@ -997,7 +999,7 @@ module.exports = {
       .getByRole('button', { name: 'Connect', exact: true })
       .click();
 
-    await this.verifyHomePage(stationExtensionMultiSig);
+    await this.evaluateMainPage(stationExtensionMultiSig, 'MultiSig wallet');
     return true;
   },
 
