@@ -1002,22 +1002,4 @@ module.exports = {
     await this.evaluateMainPage(stationExtensionMultiSig, 'MultiSig wallet');
     return true;
   },
-
-  async verifyHomePage(page = stationExtension) {
-    await expect(await page.getByText('Portfolio value')).toBeVisible();
-    await expect(await page.getByText('Send')).toBeVisible();
-    await expect(await page.getByText('Receive')).toBeVisible();
-    await expect(await page.getByText('Buy')).toBeVisible();
-    await expect(await page.getByText('0').first()).toBeVisible();
-    await expect(
-      await page.getByText('.00', { exact: true }).first(),
-    ).toBeVisible();
-    await expect(
-      await page.getByText('LUNA', { exact: true }).first(),
-    ).toBeVisible();
-    await expect(await page.getByText('0').last()).toBeVisible();
-    await expect(
-      await page.getByText('.00', { exact: true }).last(),
-    ).toBeVisible();
-  },
 };
