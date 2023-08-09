@@ -73,7 +73,9 @@ module.exports = (on, config) => {
       await station.createWallet(userName);
       return true;
     },
-
+    createMultiSigWallet: async (addresses, threshold) => {
+      return await station.createMultiSigWallet(addresses, threshold);
+    },
     initPlaywright: async () => {
       const connected = await playwright.init();
       return connected;

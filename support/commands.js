@@ -83,6 +83,10 @@ Cypress.Commands.add('importWalletFromPrivateKeyWrongPassword', () => {
   return cy.task('importWalletFromPrivateKeyWrongPassword');
 });
 
+Cypress.Commands.add('createMultiSigWallet', (addresses, threshold) => {
+  return cy.task('createMultiSigWallet', addresses, threshold);
+});
+
 // metamask commands
 
 Cypress.Commands.add('addMetamaskNetwork', network => {
