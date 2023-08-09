@@ -1,6 +1,6 @@
 const playwright = require('./playwrightStation');
 
-const elements = require('../pages/station/main-page');
+const elements = require('../pages/station/basePage');
 
 const station = {
   async initialSetup(playwrightInstance) {
@@ -10,7 +10,7 @@ const station = {
       await playwright.init();
     }
 
-    await playwright.assignStartPage();
+    // await playwright.assignStartPage();
     await playwright.assignSeedPage();
     await playwright.setupQaWalletAndVerify();
     return true;

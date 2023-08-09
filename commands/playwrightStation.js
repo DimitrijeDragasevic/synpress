@@ -4,17 +4,18 @@ const { defineConfig } = require('@playwright/test');
 
 const {
   seedFormElements,
-  seedCompletedFormElements,
   manageWalletsForm,
 } = require('../pages/station/seed-page');
 
 const { createWalletElements } = require('../pages/station/create-wallet-page');
-const { flare } = require('@wagmi/chains');
 
 const expect = require('@playwright/test').expect;
 
+const PageFactory = require('../pages/station/pageFactory');
+
 let browser;
-let mainWindow;
+let browserContext;
+let pageFactory;
 let stationExtension;
 let stationExtensionNewWallet;
 let stationExtensionSeed;
@@ -23,43 +24,26 @@ let stationExtensionMultiSig;
 let stationExtensionLedger;
 let activeTabName;
 
+//all of the test share a single browser context
+//can be changed and manupilated but this is the entrypoint for each browser context
+
 module.exports = {
   config: defineConfig({
     expect: {
       timeout: 7000,
     },
   }),
-  browser() {
-    return browser;
-  },
-  mainWindow() {
-    return mainWindow;
-  },
-  stationExtension() {
-    return stationExtension;
-  },
-  stationExtensionNewWallet() {
-    return stationExtensionNewWallet;
-  },
-  stationExtensionSeed() {
-    return stationExtensionSeed;
-  },
-  stationExtensionPrivateKey() {
-    return stationExtensionPrivateKey;
-  },
-  stationExtensionMultiSig() {
-    return stationExtensionMultiSig;
-  },
-  stationExtensionLedger() {
-    return stationExtensionLedger;
-  },
-  activeTabName() {
-    return activeTabName;
+  async getBrowserContext() {
+    if (!browserContext) {
+      browserContext = browser.contexts()[0];
+    }
+    return browserContext;
   },
   async assignActiveTabName(tabName) {
     activeTabName = tabName;
     return true;
   },
+
   async init(playwrightInstance) {
     const chromium = playwrightInstance
       ? playwrightInstance
@@ -80,138 +64,38 @@ module.exports = {
     } else {
       browser = await chromium.connectOverCDP(webSocketDebuggerUrl);
     }
+
+    // Initialize browserContext after browser initialization
+    browserContext = browser.contexts()[0];
+    // Initialize pageFactory after browserContext initialization
+    pageFactory = new PageFactory(browserContext);
+
     return browser.isConnected();
   },
-  async assignStartPage() {
-    let stationExtensionUrl;
-    let serviceWorkers = await browser.contexts()[0].serviceWorkers();
 
-    for (let worker of serviceWorkers) {
-      const url = worker._initializer.url;
-
-      // Check if the URL contains 'background.js'
-      if (url.includes('background.js')) {
-        stationExtensionUrl = url.replace('background.js', 'index.html#/');
-        break; // Exit the loop once the correct service worker is found
-      }
-    }
-
-    const blankPage = await browser.contexts()[0].newPage();
-    await blankPage.goto(stationExtensionUrl);
-
-    let pages = await browser.contexts()[0].pages();
-    pages.forEach(page => {
-      if (page.url().includes('index.html')) {
-        stationExtension = page;
-      }
-    });
-  },
-  async waitForNewPageWithUrlPart(urlPart) {
-    return new Promise(resolve => {
-      browser.contexts()[0].on('page', newPage => {
-        newPage.url().includes(urlPart) && resolve(newPage);
-      });
-    });
-  },
   async assignNewWalletPage() {
-    const newWalletPagePromise = this.waitForNewPageWithUrlPart('auth/new');
-    await stationExtension.getByText('New wallet').click();
-    stationExtensionNewWallet = await newWalletPagePromise;
+    stationExtensionNewWallet = pageFactory.createPage('newWallet');
   },
   async assignSeedPage() {
-    const seedPagePromise = this.waitForNewPageWithUrlPart('auth/recover');
-    await stationExtension.getByText('Import from seed phrase').click();
-    stationExtensionSeed = await seedPagePromise;
+    stationExtensionSeed = await pageFactory.createPage('seed');
   },
   async assignPrivateKeyPage() {
-    const privateKeyPagePromise = this.waitForNewPageWithUrlPart('auth/import');
-    await stationExtension.getByText('Import from private key').click();
-    stationExtensionPrivateKey = await privateKeyPagePromise;
+    stationExtensionPrivateKey = pageFactory.createPage('private key');
   },
   async assignMultiSigPage() {
-    const multisigWalletPagePromise =
-      this.waitForNewPageWithUrlPart('auth/multisig/new');
-    await stationExtension.getByText('New multisig wallet').click();
-    stationExtensionMultiSig = await multisigWalletPagePromise;
+    stationExtensionMultiSig = pageFactory.createPage('multi');
   },
   async assignLedgerPage() {
-    const ledgerPagePromise = this.waitForNewPageWithUrlPart('auth/ledger');
-    await stationExtension.getByText('Access with ledger').click();
-    stationExtensionLedger = await ledgerPagePromise;
+    stationExtensionLedger = pageFactory.createPage('ledger');
   },
   async clear() {
     browser = null;
     return true;
   },
 
-  async switchToCypressWindow() {
-    if (mainWindow) {
-      await mainWindow.bringToFront();
-      await module.exports.assignActiveTabName('cypress');
-    }
-    return true;
-  },
-  async switchToStationWindow() {
-    await stationExtension.bringToFront();
-    await module.exports.assignActiveTabName('station');
-    return true;
-  },
-  async bringToFrontAndReload(page) {
-    page.bringToFront();
-    page.reload();
-  },
-
   async setupQaWalletAndVerify() {
-    await this.fillSeedForm('Test wallet 1', 'Testtest123!');
-    await this.bringToFrontAndReload(stationExtension);
-    await this.verifyFirstWalletAdded();
-  },
-  async fillSeedForm(walletName, password, seed = process.env.SEED_PHRASE) {
-    await stationExtensionSeed.bringToFront();
-    await stationExtensionSeed.waitForLoadState();
-    await stationExtensionSeed.fill(seedFormElements.inputName, walletName);
-    await stationExtensionSeed.fill(seedFormElements.inputPassword, password);
-    await stationExtensionSeed.fill(
-      seedFormElements.inputconfirmPassword,
-      password,
-    );
-    await stationExtensionSeed.fill(seedFormElements.inputMnemonicSeed, seed);
-    await stationExtensionSeed.click(seedFormElements.submitButton),
-      await stationExtensionSeed.waitForURL('**/recover#3');
-
-    await expect(
-      await stationExtensionSeed.getByTestId('DoneAllIcon'),
-    ).toBeVisible();
-    await expect(
-      stationExtensionSeed.getByRole('button', {
-        name: 'Connect',
-        exact: true,
-      }),
-    ).toBeVisible();
-    await stationExtensionSeed
-      .getByRole('button', { name: 'Connect', exact: true })
-      .click();
-  },
-
-  async verifyFirstWalletAdded() {
-    await expect(
-      await stationExtension.getByRole('button', {
-        name: 'Test wallet 1',
-      }),
-    ).toBeVisible();
-    await stationExtension.getByText('Test wallet 1').click();
-    await expect(
-      await stationExtension.getByText('Manage Wallets'),
-    ).toBeVisible();
-    await expect(
-      await stationExtension.getByRole('button', {
-        name: 'Test wallet 1 terra1...6cw6qmfdnl9un23yxs',
-      }),
-    ).toBeVisible();
-    await expect(
-      await stationExtension.getByText('Add a wallet'),
-    ).toBeVisible();
-    await stationExtension.click(manageWalletsForm.manageWalletsCloseButton);
+    await stationExtensionSeed.fillSeedForm('Test wallet 1', 'Testtest123!');
+    await stationExtensionSeed.verifyFirstWalletAdded();
   },
 
   async goToManageWalletsMenuFromHome() {
@@ -421,7 +305,13 @@ module.exports = {
    * @param {string} role The role of the button element (button, link, etc.).
    * @param {boolean} click Whether or not to click the button.
    */
-  async expectButton(buttonText, type, role = 'button', click = true, page = stationExtension) {
+  async expectButton(
+    buttonText,
+    type,
+    role = 'button',
+    click = true,
+    page = stationExtension,
+  ) {
     // Assign button using buttonText based on type supplied.
     let button;
     if (type === 'name') {
@@ -457,7 +347,13 @@ module.exports = {
    * @param {boolean} close Whether or not to close out of the settings modal.
    * @param {boolean} heading Whether or not the text has a heading role.
    */
-  async expectText(text, click = false, close = false, heading = false, page = stationExtension) {
+  async expectText(
+    text,
+    click = false,
+    close = false,
+    heading = false,
+    page = stationExtension,
+  ) {
     let textComponent;
     if (heading) {
       textComponent = await page
@@ -489,7 +385,10 @@ module.exports = {
   /* -------------------------------------------------------------------------- */
 
   // Ensures main page is loaded with all relevant elements.
-  async evaluateMainPage(page = stationExtension, buttonName = 'Test wallet 1') {
+  async evaluateMainPage(
+    page = stationExtension,
+    buttonName = 'Test wallet 1',
+  ) {
     /* --------------------------------- Buttons -------------------------------- */
 
     const buttons = {
@@ -526,7 +425,7 @@ module.exports = {
         attributes.type,
         'button',
         false,
-        page
+        page,
       );
     }
 
