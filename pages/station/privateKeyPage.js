@@ -1,6 +1,16 @@
 const BasePage = require('./homePage');
+const expect = require('@playwright/test').expect;
+
+/**
+ * PrivateKeyPage extends BasePage and offers functionality to manage and interact with the "Import from private key" page.
+ */
 
 class PrivateKeyPage extends BasePage {
+  /**
+   * Constructor initializes a new instance of the PrivateKeyPage class.
+   *
+   * @param {Object} browserContext - The browser context in which the page operates.
+   */
   constructor(browserContext) {
     super(browserContext);
     this.page = null;
@@ -13,6 +23,9 @@ class PrivateKeyPage extends BasePage {
     await this.createPage();
   }
 
+  /**
+   * Navigates to the "Import from private key" page and sets up the page instance for it.
+   */
   async createPage() {
     const pagePromise = this.getPageWithUrlPart('auth/import');
     await this.homePage.getByText('Import from private key').click();
@@ -37,6 +50,23 @@ class PrivateKeyPage extends BasePage {
 
     // Fill in the password
     await this.userInput(password, 'input[name="password"]', this.page);
+  }
+
+  async submitAndVerifyHomeScreen() {
+    // Check if the Submit button is enabled and click it
+    await this.page.getByText('Submit').isEnabled();
+    await this.page.getByText('Submit').click();
+
+    // Check if the text for various wallet features are visible on the page
+    await expect(await this.page.getByText('Portfolio value')).toBeVisible();
+    await expect(await this.page.getByText('Send')).toBeVisible();
+    await expect(await this.page.getByText('Receive')).toBeVisible();
+    await expect(await this.page.getByText('Buy')).toBeVisible();
+
+    // Verify that the specific asset 'LUNA' is visible
+    await expect(
+      await this.page.getByText('LUNA', { exact: true }).first(),
+    ).toBeVisible();
   }
 
   async verifyWrongPrivateKeyMessage() {

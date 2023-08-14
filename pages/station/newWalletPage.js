@@ -1,4 +1,5 @@
 const HomePage = require('./homePage');
+const expect = require('@playwright/test').expect;
 
 const inputName = '[name="name"]';
 const inputPassword = '[name="password"]';
@@ -8,29 +9,45 @@ const checkBox = '[class="Checkbox_track__2gz9s"]';
 const submitButton = '[type="submit"]';
 const mnemonicNumber = '[class="Form_label__bOv6h"]';
 
+/**
+ * NewWalletPage extends HomePage and represents operations specific to the "New Wallet" page.
+ */
+
 class NewWalletPage extends HomePage {
+  /**
+   * Constructor initializes a new instance of the NewWalletPage class
+   *
+   * @param {Object} browserContext - The browser context in which the page will operate
+   */
   constructor(browserContext) {
     super(browserContext);
     this.page = null;
   }
 
   async initialize() {
-    if (!this.homePage) {
-      await this.assignStartPage();
-    }
+    await this.assignStartPage();
     await this.createPage();
   }
 
+  /**
+   * Navigates to the "New Wallet" page and sets up a page instance for it
+   */
+
   async createPage() {
     const pagePromise = this.getPageWithUrlPart('auth/new');
-    console.log("TEST")
-    console.log(this.browserContext)
     await this.homePage.getByText('New wallet').click();
+    console.log('New wallet page created');
     this.page = await pagePromise;
+    this.page.waitForURL();
   }
 
+  /**
+   * Fills out the create wallet form and progresses through wallet creation process
+   *
+   * @param {string} walletName - Name for the new wallet
+   * @param {string} password - Password for the new wallet (defaults to 'Testtest123!')
+   */
   async fillCreateWalletForm(walletName, password = 'Testtest123!') {
-    await this.assignNewWalletPage();
     await this.page.fill(createWalletElements.inputName, walletName);
     await this.page.fill(createWalletElements.inputPassword, password);
     await this.page.fill(createWalletElements.inputconfirmPassword, password);
@@ -97,7 +114,12 @@ class NewWalletPage extends HomePage {
       await this.page.getByText('.00', { exact: true }).last(),
     ).toBeVisible();
   }
-
+  /**
+   * Extracts a number from an input string of format "Nth word"
+   *
+   * @param {string} inputString - The input string containing the number to be extracted
+   * @returns {number|null} - Returns the extracted number, or null if not found
+   */
   getNFromNthWord(inputString) {
     const match = inputString.match(/(\d+)\w{0,2} word/);
     return match ? parseInt(match[1]) : null;

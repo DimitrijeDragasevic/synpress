@@ -1,22 +1,33 @@
 const expect = require('@playwright/test').expect;
 
-
+/**
+ * Represents the HomePage, which serves as the main landing page for users.
+ * It provides functionalities to initialize, assign, and interact with the home page.
+ */
 class HomePage {
+  /**
+   * Constructor initializes a new instance of the HomePage class.
+   * @param {Object} browserContext - The browser context in which the page operates.
+   */
   constructor(browserContext) {
     this.browserContext = browserContext;
     this.homePage = null;
   }
 
   async initialize() {
-    if (!this.homePage) {
-      await this.assignStartPage();
-    }
+    await this.assignStartPage();
   }
 
+  /**
+   * Detects or sets up the station extension home page.
+   * It searches for existing pages within the browser context that match the expected URL.
+   * If none is found, it creates a new home page by navigating to the station extension URL.
+   */
   async assignStartPage() {
     let stationExtensionUrl;
     let serviceWorkers = await this.browserContext.serviceWorkers();
 
+    // Iterate over the service workers to find the station extension URL
     for (let worker of serviceWorkers) {
       const url = worker._initializer.url;
       if (url.includes('background.js')) {
@@ -24,18 +35,30 @@ class HomePage {
         break;
       }
     }
+    let pages = await this.browserContext.pages();
 
+    // Iterate over the existing pages to see if the home page already exists
+    for (let page of pages) {
+      if (page.url().includes('index.html')) {
+        console.log('This page already exists in the browser context');
+        console.log('Reassigning');
+        this.homePage = page;
+        return; // HomePage exists, so exit the function early.
+      }
+    }
+    // If we reach here, it means homePage doesn't exist. So, create it.
+    console.log('Creating new home page');
     const blankPage = await this.browserContext.newPage();
     await blankPage.goto(stationExtensionUrl);
-
-    let pages = await this.browserContext.pages();
-    pages.forEach(page => {
-      if (page.url().includes('index.html')) {
-        this.homePage = page;
-      }
-    });
+    this.homePage = blankPage;
   }
 
+  /**
+   * Listens for a new page with a specific URL part to be opened within the browser context.
+   * Once such a page is detected, it resolves the promise with that page.
+   * @param {string} urlPart - The URL substring to look for when a new page is opened.
+   * @returns {Promise} - Resolves with the detected page that contains the specified URL part.
+   */
   async getPageWithUrlPart(urlPart) {
     return new Promise(resolve => {
       this.browserContext.on('page', newPage => {
@@ -49,9 +72,7 @@ class HomePage {
   }
 
   async verifyElementsManageWalletsForm() {
-    await expect(
-      await this.homePage.getByText('Manage Wallets'),
-    ).toBeVisible();
+    await expect(await this.homePage.getByText('Manage Wallets')).toBeVisible();
     await expect(
       await this.getButtonByText(this.homePage, 'New wallet'),
     ).toBeVisible();
@@ -70,6 +91,8 @@ class HomePage {
   }
 
   async goToManageWalletsMenuFromHome() {
+    await this.homePage.bringToFront();
+    await this.homePage.reload();
     await this.expectButton('Test wallet 1', 'name');
     await expect(await this.homePage.getByText('Manage Wallets')).toBeVisible();
     await this.homePage.getByRole('button', { name: 'Add a wallet' }).click();
@@ -90,6 +113,7 @@ class HomePage {
     click = true,
     page = this.homePage,
   ) {
+    this.homePage.bringToFront();
     // Assign button using buttonText based on type supplied.
     let button;
     if (type === 'name') {
@@ -193,50 +217,11 @@ class HomePage {
       await this.expectButton('CloseIcon', 'id');
     }
   }
-  async submitAndVerifyHomeScreen(page) {
-    // Check the value of the 'page' parameter and assign the corresponding page object variable
-    switch (page) {
-      case 'station':
-        page = stationExtension;
-        break;
-      case 'new wallet':
-        page = stationExtensionNewWallet;
-        break;
-      case 'seed':
-        page = stationExtensionSeed;
-        break;
-      case 'private key':
-        page = stationExtensionPrivateKey;
-        break;
-      case 'multi sig':
-        page = stationExtensionMultiSig;
-        break;
-      case 'ledger':
-        page = stationExtensionLedger;
-        break;
-      default:
-        throw new Error('Invalid page value');
-    }
-
-    // Check if the Submit button is enabled and click it
-    await page.getByText('Submit').isEnabled();
-    await page.getByText('Submit').click();
-
-    // Check if the text for various wallet features are visible on the page
-    await expect(await page.getByText('Portfolio value')).toBeVisible();
-    await expect(await page.getByText('Send')).toBeVisible();
-    await expect(await page.getByText('Receive')).toBeVisible();
-    await expect(await page.getByText('Buy')).toBeVisible();
-
-    // Verify that the specific asset 'LUNA' is visible
-    await expect(
-      await page.getByText('LUNA', { exact: true }).first(),
-    ).toBeVisible();
-  }
 
   // Ensures main page is loaded with all relevant elements.
   async evaluateMainPage(page = this.homePage, buttonName = 'Test wallet 1') {
     /* --------------------------------- Buttons -------------------------------- */
+    this.homePage.reload();
 
     const buttons = {
       walletButton: {
@@ -515,11 +500,11 @@ class HomePage {
 
       if (
         filter === 'Hide non-whitelisted' &&
-        stationExtension.isVisible(`text='${filteredAsset}'`)
+        this.homePage.isVisible(`text='${filteredAsset}'`)
       ) {
         // Evaluate if Hide non-whitelisted filter filters specified asset.
         await this.expectText(filter, true, true);
-        const nonWhitelistedToken = await stationExtension
+        const nonWhitelistedToken = await this.homePage
           .getByText(filteredAsset)
           .first();
         if (action === 'check') {
@@ -529,11 +514,11 @@ class HomePage {
         }
       } else if (
         filter === 'Hide low-balance' &&
-        stationExtension.isVisible(`text='${filteredAsset}'`)
+        this.homePage.isVisible(`text='${filteredAsset}'`)
       ) {
         // Evaluate if Hide low-balance filter filters specified asset.
         await this.expectText(filter, true, true);
-        const lowBalanceToken = await stationExtension
+        const lowBalanceToken = await this.homePage
           .getByText(filteredAsset)
           .first();
         if (action === 'check') {
@@ -564,7 +549,7 @@ class HomePage {
       await this.expectButton('CloseIcon', 'id');
 
       // Evaluate if asset is properly added or removed from the asset list.
-      const assetItem = await stationExtension.getByRole('article').filter({
+      const assetItem = await this.homePage.getByRole('article').filter({
         hasText: new RegExp(`^${asset}.*?${asset}$`),
       });
       if (action === 'check') {
@@ -577,8 +562,8 @@ class HomePage {
 
   // Evaluates manage assets actions and ensures proper functionality.
   async evaluateManageAssets() {
+    this.homePage.reload();
     /* --------------------------- Add / Remove Assets -------------------------- */
-
     const unavailableAssets = ['AKT', 'BNB', 'DOT'];
     // Evaluate selection of unavailable assets in manage assets.
     for (const unavailableAsset of unavailableAssets) {

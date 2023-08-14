@@ -75,7 +75,7 @@ module.exports = {
     stationExtensionSeed = await pageFactory.createPage('seed');
   },
   async assignPrivateKeyPage() {
-    stationExtensionPrivateKey = await pageFactory.createPage('private key');
+    stationExtensionPrivateKey = await pageFactory.createPage('privateKey');
   },
   async assignMultiSigPage() {
     stationExtensionMultiSig = await pageFactory.createPage('multi');
@@ -113,7 +113,7 @@ module.exports = {
     seed = process.env.SEED_PHRASE_TWO,
   ) {
     await this.assignSeedPage();
-    await this.fillSeedForm(walletName, password, seed);
+    await stationExtensionSeed.fillSeedForm(walletName, password, seed);
   },
 
   async close() {
@@ -127,17 +127,16 @@ module.exports = {
   },
 
   async fillCreateWalletForm(walletName) {
-    this.assignNewWalletPage()
     await stationExtensionNewWallet.fillCreateWalletForm(walletName)
   },
 
   async goToManageWalletsMenuFromHome() {
-    await this.assignHomePage()
+
     await stationExtension.goToManageWalletsMenuFromHome()
   },
 
-  async submitAndVerifyHomeScreen(page) {
-    await stationExtension.submitAndVerifyHomeScreen(page)
+  async submitAndVerifyHomeScreen() {
+    await stationExtensionPrivateKey.submitAndVerifyHomeScreen()
   },
 
   async evaluateMainPage() {
@@ -157,6 +156,7 @@ module.exports = {
   },
 
   async fillRecoverWalletFromPrivateKeyForm(privateKey = process.env.PRIVATE_KEY, password = 'Testtest123!') {
+    await this.assignPrivateKeyPage()
     await stationExtensionPrivateKey.fillRecoverWalletFromPrivateKeyForm(privateKey, password)
   },
 
@@ -168,7 +168,9 @@ module.exports = {
     await stationExtensionPrivateKey.verifyWrongPassword();
   },
   async createMutliSigWallet(addresses, threshold){
+    await this.assignMultiSigPage()
     await stationExtensionMultiSig.createMutliSigWallet(addresses, threshold);
+    return true
   }
 
 
