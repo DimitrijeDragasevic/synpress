@@ -1,16 +1,23 @@
-const BasePage = require('./basePage');
+const HomePage = require('./homePage');
 
-class LedgerPage extends BasePage {
-    constructor(browserContext) {
-        super(browserContext);
-        this.page = this.createPage()
-    }
+class LedgerPage extends HomePage {
+  constructor(browserContext) {
+    super(browserContext);
+    this.page = null;
+  }
 
-    async createPage() {
-        const pagePromise = this.getPageWithUrlPart('auth/ledger');
-        await this.basePage.getByText('Access with ledger').click();
-        return await pagePromise;
+  async initialize() {
+    if (this.homePage == null || this.homePage == undefined) {
+      await this.assignStartPage();
     }
+    await this.createPage();
+  }
+
+  async createPage() {
+    const pagePromise = this.getPageWithUrlPart('auth/ledger');
+    await this.homePage.getByText('Access with ledger').click();
+    this.page = await pagePromise;
+  }
 }
 
 module.exports = LedgerPage;

@@ -1,7 +1,5 @@
 const playwright = require('./playwrightStation');
 
-const elements = require('../pages/station/basePage');
-
 const station = {
   async initialSetup(playwrightInstance) {
     if (playwrightInstance) {
