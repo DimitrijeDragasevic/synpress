@@ -1,7 +1,5 @@
 const playwright = require('./playwrightStation');
 
-const elements = require('../pages/station/main-page');
-
 const station = {
   async initialSetup(playwrightInstance) {
     if (playwrightInstance) {
@@ -10,7 +8,7 @@ const station = {
       await playwright.init();
     }
 
-    await playwright.assignStartPage();
+    await playwright.assignHomePage();
     await playwright.assignSeedPage();
     await playwright.setupQaWalletAndVerify();
     return true;
@@ -28,6 +26,7 @@ const station = {
   },
 
   async createWallet(walletName) {
+    await playwright.assignNewWalletPage()
     await playwright.fillCreateWalletForm(walletName);
   },
 
@@ -53,7 +52,7 @@ const station = {
 
   async importWalletFromPrivateKey() {
     await playwright.fillRecoverWalletFromPrivateKeyForm();
-    await playwright.submitAndVerifyHomeScreen('private key');
+    await playwright.submitAndVerifyHomeScreen();
   },
 
   async importWalletFromPrivateKeyInvalidKey() {

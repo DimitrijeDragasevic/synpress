@@ -30,7 +30,7 @@
   "scripts": {
     "fix": "turbo fix:eslint fix:prettier --concurrency 1",
     "fix:eslint": "eslint --fix **/*.js",
-    "fix:prettier": "prettier --write **/*.js",
+    "fix:prettier": "prettier --write **/**/*.js",
     "lint": "turbo lint:eslint lint:prettier",
     "lint:eslint": "eslint . --ext js",
     "lint:prettier": "prettier --check **/*.js",
