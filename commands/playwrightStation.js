@@ -25,12 +25,7 @@ module.exports = {
       timeout: 7000,
     },
   }),
-  async getBrowserContext() {
-    if (!browserContext) {
-      browserContext = browser.contexts()[0];
-    }
-    return browserContext;
-  },
+
   async assignActiveTabName(tabName) {
     activeTabName = tabName;
     return true;
@@ -107,15 +102,6 @@ module.exports = {
     await stationExtensionSeed.fillSeedForm(walletName, password, seed);
   },
 
-  async fillImportFromSeedPhraseForm(
-    walletName,
-    password,
-    seed = process.env.SEED_PHRASE_TWO,
-  ) {
-    await this.assignSeedPage();
-    await stationExtensionSeed.fillSeedForm(walletName, password, seed);
-  },
-
   async close() {
     let pages = await browser.contexts()[0].pages();
     pages.forEach(page => {
@@ -172,6 +158,5 @@ module.exports = {
     await stationExtensionMultiSig.createMutliSigWallet(addresses, threshold);
     return true
   }
-
 
 };
