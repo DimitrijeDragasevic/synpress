@@ -61,7 +61,7 @@ module.exports = {
   },
 
   async assignHomePage() {
-    stationExtension = await pageFactory.createPage('home')
+    stationExtension = await pageFactory.createPage('home');
   },
   async assignNewWalletPage() {
     stationExtensionNewWallet = await pageFactory.createPage('newWallet');
@@ -113,20 +113,23 @@ module.exports = {
   },
 
   async fillCreateWalletForm(walletName) {
-    await stationExtensionNewWallet.fillCreateWalletForm(walletName)
+    await stationExtensionNewWallet.fillCreateWalletForm(walletName);
   },
 
   async goToManageWalletsMenuFromHome() {
-
-    await stationExtension.goToManageWalletsMenuFromHome()
+    await stationExtension.goToManageWalletsMenuFromHome();
   },
 
   async submitAndVerifyHomeScreen() {
-    await stationExtensionPrivateKey.submitAndVerifyHomeScreen()
+    await stationExtensionPrivateKey.submitAndVerifyHomeScreen();
   },
 
   async evaluateMainPage() {
-    await stationExtension.evaluateMainPage()
+    await stationExtension.evaluateMainPage();
+  },
+
+  async evaluateSend() {
+    await stationExtension.evaluateSend();
   },
 
   async evaluateSettings() {
@@ -141,9 +144,15 @@ module.exports = {
     await stationExtension.evaluateManageAssets();
   },
 
-  async fillRecoverWalletFromPrivateKeyForm(privateKey = process.env.PRIVATE_KEY, password = 'Testtest123!') {
-    await this.assignPrivateKeyPage()
-    await stationExtensionPrivateKey.fillRecoverWalletFromPrivateKeyForm(privateKey, password)
+  async fillRecoverWalletFromPrivateKeyForm(
+    privateKey = process.env.PRIVATE_KEY,
+    password = 'Testtest123!',
+  ) {
+    await this.assignPrivateKeyPage();
+    await stationExtensionPrivateKey.fillRecoverWalletFromPrivateKeyForm(
+      privateKey,
+      password,
+    );
   },
 
   async verifyWrongPrivateKeyMessage() {
@@ -153,10 +162,9 @@ module.exports = {
   async verifyWrongPassword() {
     await stationExtensionPrivateKey.verifyWrongPassword();
   },
-  async createMutliSigWallet(addresses, threshold){
-    await this.assignMultiSigPage()
+  async createMutliSigWallet(addresses, threshold) {
+    await this.assignMultiSigPage();
     await stationExtensionMultiSig.createMutliSigWallet(addresses, threshold);
-    return true
-  }
-
+    return true;
+  },
 };

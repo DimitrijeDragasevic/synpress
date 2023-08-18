@@ -19,6 +19,10 @@ Cypress.Commands.add('evaluateMainPage', () => {
   return cy.task('evaluateMainPage');
 });
 
+Cypress.Commands.add('evaluateSend', () => {
+  return cy.task('evaluateSend');
+});
+
 Cypress.Commands.add('evaluateSettings', () => {
   return cy.task('evaluateSettings');
 });

@@ -37,7 +37,7 @@ module.exports = (on, config) => {
       const stationPath = await helpers.prepareStation('7.4.1.1');
       arguments_.extensions.push(stationPath);
     }
-    
+
     return arguments_;
   });
 
@@ -351,6 +351,10 @@ module.exports = (on, config) => {
     },
     evaluateMainPage: async () => {
       await station.evaluateMainPage();
+      return true;
+    },
+    evaluateSend: async () => {
+      await station.evaluateSend();
       return true;
     },
     evaluateSettings: async () => {
