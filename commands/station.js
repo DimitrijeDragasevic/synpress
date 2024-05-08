@@ -26,12 +26,16 @@ const station = {
   },
 
   async createWallet(walletName) {
-    await playwright.assignNewWalletPage()
+    await playwright.assignNewWalletPage();
     await playwright.fillCreateWalletForm(walletName);
   },
 
   async evaluateMainPage() {
     await playwright.evaluateMainPage();
+  },
+
+  async evaluateSend() {
+    await playwright.evaluateSend();
   },
 
   async evaluateSettings() {

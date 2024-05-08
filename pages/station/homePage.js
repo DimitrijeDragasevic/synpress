@@ -117,7 +117,7 @@ class HomePage {
     // Assign button using buttonText based on type supplied.
     let button;
     if (type === 'name') {
-      button = await page.getByRole(role, { name: buttonText });
+      button = await page.getByRole(role, { name: buttonText, exact: true });
     } else if (type === 'id') {
       button = await page.getByTestId(buttonText);
     } else if (type === 'element') {
@@ -132,6 +132,14 @@ class HomePage {
           hasText: new RegExp(`^${buttonText}`),
         })
         .getByRole(role);
+    } else if (type === 'sendback') {
+      button = await page
+        .getByRole('heading', {
+          name: buttonText,
+        })
+        .getByRole(role, {
+          name: 'Send back',
+        });
     }
 
     await expect(button).toBeVisible();
@@ -184,12 +192,14 @@ class HomePage {
    * @param {boolean} click Whether or not to click the text option.
    * @param {boolean} close Whether or not to close out of the settings modal.
    * @param {boolean} heading Whether or not the text has a heading role.
+   * @param {number} timeout Number of milliseconds to wait for text element to appear.
    */
   async expectText(
     text,
     click = false,
     close = false,
     heading = false,
+    timeout = 10000,
     page = this.homePage,
   ) {
     let textComponent;
@@ -197,6 +207,7 @@ class HomePage {
       textComponent = await page
         .getByRole('heading', {
           name: text,
+          exact: true,
         })
         .first();
     } else {
@@ -207,7 +218,7 @@ class HomePage {
         .first();
     }
 
-    await expect(textComponent).toBeVisible();
+    await expect(textComponent).toBeVisible({ timeout });
 
     if (click) {
       await textComponent.click();
@@ -216,6 +227,71 @@ class HomePage {
     if (close) {
       await this.expectButton('CloseIcon', 'id');
     }
+  }
+
+  /**
+   * Ensures link is in document and links to correct href.
+   *
+   * @param {string} linkText String or regex representing the text of the link
+   * element.
+   * @param {string} href The href which corresponds to the expected link.
+   */
+  async expectLink(linkText, href, page = this.homePage) {
+    // Find link and expect to be visible in document.
+    const linkComponent = await page.getByRole('link', {
+      name: linkText,
+    });
+    await expect(linkComponent).toBeVisible();
+
+    // Extract href from link and expect it to match provided regex.
+    const linkHref = await linkComponent.evaluate(node =>
+      node.getAttribute('href'),
+    );
+    const escapedHref = await this.escapeText(href);
+    await expect(linkHref).toMatch(new RegExp(escapedHref + '[a-zA-Z0-9]+'));
+  }
+
+  // Adds escape char \ to special characters in string and converts to regex.
+  async escapeText(text) {
+    const escapedText = await text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    return escapedText;
+  }
+
+  /**
+   * Retries a certain action up to a specified number of attempts.
+   *
+   * @param {function} action Action to execute and potentially repeat.
+   * @param {function} failureAction Action to execute after reloading application.
+   * @param {number} attempts Number of times to attempt action before allowing process
+   * to fail.
+   */
+  retryAction = async (
+    action,
+    failureAction = () => {},
+    attempts = 3,
+    page = this.homePage,
+  ) => {
+    // If process fails, reload extension and try again up to number of attempts.
+    let result;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        result = await action();
+      } catch (err) {
+        await console.log(err);
+        await page.reload();
+        await failureAction();
+      }
+      return result;
+    }
+  };
+
+  /**
+   * Times out code for specified number of milliseconds.
+   *
+   * @param {number} ms Number of milliseconds to timeout.
+   */
+  async timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   // Ensures main page is loaded with all relevant elements.
@@ -271,7 +347,7 @@ class HomePage {
       'Buy',
       'Assets',
     ]) {
-      await this.expectText(text, false, false, false, page);
+      await this.expectText(text, false, false, false);
     }
   }
 
@@ -292,6 +368,327 @@ class HomePage {
     if (close) {
       await this.expectButton('CloseIcon', 'id');
     }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                              Send Transactions                             */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Extracts amount of a particular asset on a specified chain from the
+   * corresponding asset page.
+   *
+   * @param {string} token The token to evaluate the amount of.
+   * @param {string} chain The chain or chain path where the token is located.
+   */
+  async extractAmount(token, chain, page = this.homePage) {
+    // Construct regex based on whether a chain or chain path was supplied.
+    let regex;
+    if (chain.includes('-')) {
+      const unsupportedChain = await chain.split('-').pop();
+      const chainPath = await chain.replaceAll('-', ' → ');
+      regex = await new RegExp(
+        `^${unsupportedChain}Send back${chainPath}\\$ \\d+\\.[\\d]{2}(\\d+\\.[\\d]{2}) ${token}$`,
+      );
+    } else {
+      regex = await new RegExp(
+        `^${chain}\\$ \\d+\\.[\\d]{2}(\\d+\\.[\\d]{2}) ${token}$`,
+      );
+    }
+
+    // Wait for regex to be available on page.
+    await this.expectText(regex, false, false, false, 30000);
+
+    // Extract text which matches assigned regex.
+    const chainText = await page
+      .getByRole('article')
+      .filter({ hasText: regex })
+      .textContent();
+
+    // Extract amount from text and return value.
+    const result = await regex.exec(chainText);
+    return Number(result[1]);
+  }
+
+  /**
+   * Evaluates amounts of the test token on both the origin and destination chains.
+   *
+   * @param {string} token The token to use to test send transactions.
+   * @param {string} origin The chain from which the token is originally sent.
+   * @param {string} destination The chain to which the token is originally sent.
+   */
+  async evaluateAmounts(token, origin, destination) {
+    const getAmounts = async () => {
+      // Click into test token asset page.
+      await this.goToAssetPage(token);
+
+      // Extract relevant amounts and return values.
+      const amountOrigin = await this.extractAmount(token, origin);
+      const amountDestination = await this.extractAmount(token, destination);
+      return [amountOrigin, amountDestination];
+    };
+
+    // Retry action up to 3 times.
+    return await this.retryAction(getAmounts);
+  }
+
+  /**
+   * Ensures that the before and after amounts of the test token on both the origin and
+   * destination chains corroborate with the send transaction.
+   *
+   * @param {number} beforeOrigin The amount of the test token on the origin chain
+   * before executing the send transaction.
+   * @param {number} beforeDestination The amount of the test token on the destination
+   * chain before executing the send transaction.
+   * @param {number} sendAmount The amount of the test token which was sent.
+   * @param {token} token The token to use to test send transactions.
+   * @param {origin} origin The chain from which the token is originally sent.
+   * @param {destination} destination The chain to which the token is originally sent.
+   */
+  async auditTransaction(
+    beforeOrigin,
+    beforeDestination,
+    sendAmount,
+    token,
+    origin,
+    destination,
+    page = this.homePage,
+  ) {
+    // Wait and then reload extension to update token amounts.
+    await this.timeout(5000);
+    await page.reload();
+
+    // Evaluate current amounts on origin and destination chains.
+    const [afterOrigin, afterDestination] =
+      (await this.evaluateAmounts(token, origin, destination)) ?? [];
+
+    await console.log(
+      beforeOrigin,
+      afterOrigin,
+      beforeDestination,
+      afterDestination,
+    );
+
+    // Attempt to audit amounts before and after transaction.
+    try {
+      const expectedOrigin =
+        Math.round((beforeOrigin - sendAmount) * 100) / 100;
+      const expectedDestination =
+        Math.round((beforeDestination + sendAmount) * 100) / 100;
+      await expect(afterOrigin).toEqual(expectedOrigin);
+      await expect(afterDestination).toEqual(expectedDestination);
+      await this.expectButton('BackIcon', 'id');
+      await console.log('confirmed');
+    } catch (err) {
+      // Amounts may have not been updated, try again.
+      try {
+        await this.auditTransaction(
+          beforeOrigin,
+          beforeDestination,
+          sendAmount,
+          token,
+          origin,
+          destination,
+        );
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    return;
+  }
+
+  /**
+   * Navigates to the asset page of the specified token from the main page.
+   *
+   * @param {string} token The token to use to test send transactions.
+   */
+  async goToAssetPage(token, page = this.homePage) {
+    const clickAsset = async () => {
+      // Wait for assets to load.
+      await this.timeout(5000);
+
+      // Click into test token asset page.
+      await page.getByRole('heading').click();
+      await this.expectText(new RegExp(`^${token} \\d*$`), true, false, true);
+
+      // Ensure automated software clicked into correct asset page.
+      await page.getByText(token);
+    };
+
+    await this.retryAction(clickAsset);
+  }
+
+  /**
+   * Evaluates sending 0.01 axlUSDC to active wallet's Osmosis address.
+   *
+   * The result should be a decrease of 0.01 axlUSDC on Terra and an increase of
+   * 0.01 axlUSDC on the Axelar-Terra-Osmosis path.
+   *
+   * Finally, the Send back functionality is used to send back 0.01 axlUSDC on the
+   * Axelar-Terra-Osmosis path to Terra.
+   *
+   * Due to transaction fees being paid in other denominations, in very small amounts,
+   * the resulting values on the asset page of axlUSDC after executing the transactions
+   * in this function should match the original amounts.
+   *
+   * @param {string} token The token to use to test send transactions.
+   * @param {string} origin The chain from which the token is originally sent.
+   * @param {string} destination The chain to which the token is originally sent.
+   * @param {number} sendAmount The amount of the test token to send.
+   */
+  async evaluateSend(
+    token = 'axlUSDC',
+    origin = 'Terra',
+    destination = 'Axelar-Terra-Osmosis',
+    sendAmount = 0.01,
+    page = this.homePage,
+  ) {
+    /* ---------------------------------- Send ---------------------------------- */
+
+    // Extract amounts on origin and destination chains before send transaction.
+    const [amountBeforeSendTerra, amountBeforeSendOsmosis] =
+      (await this.evaluateAmounts(token, origin, destination)) ?? [];
+
+    // Navigate to the send page and verify relevant elements.
+    await this.expectButton('Send', 'name');
+    for (const text of [
+      'Send',
+      'Asset',
+      'axlUSDC',
+      'Source chain',
+      'Terra',
+      'Recipient',
+      'Amount',
+      'Memo (optional)',
+      'Check if this transaction requires a memo',
+      'Fee',
+      'LUNA',
+      'Balance',
+      'Balance after tx',
+      'Password',
+    ]) {
+      await this.expectText(text, false, false, false, 10000);
+    }
+
+    // Select wallet's Osmosis address as recipient and verify confirmation message.
+    await this.expectButton('ContactsIcon', 'id');
+    await this.expectButton('Select from your addresses', 'name');
+    await this.expectButton('Osmosis Osmosis osmo16...m4f9mj', 'name');
+    await this.expectText('Destination chain: Osmosis');
+
+    // Fill out the rest of the send form and submit transaction.
+    await this.userInput(sendAmount.toString(), 'input[name="input"]');
+    await this.userInput('Testtest123!', 'input[type="password"]');
+    // await this.userSubmit();
+
+    // Confirm elements on broadcasting transaction page.
+    await this.expectText('Broadcasting transaction', false, false, true);
+    await this.expectText('Tx hash', false, false, true);
+    await this.expectLink(
+      /[A-Z0-9]{6}[.]{3}[A-Z0-9]{6}/,
+      'https://terrasco.pe/mainnet/tx/',
+    );
+
+    // Confirm elements on successful transaction page.
+    await this.expectText('Success!', false, false, true, 180000);
+    await this.expectText('Tx hash', false, false, true);
+    await this.expectLink(
+      /[a-z0-9]{6}[.]{3}[a-z0-9]{6}/,
+      'https://terrasco.pe/mainnet/address/',
+    );
+    await this.expectLink(
+      /[A-Z0-9]{6}[.]{3}[A-Z0-9]{6}/,
+      'https://terrasco.pe/mainnet/tx/',
+    );
+    await this.expectButton('Confirm', 'name');
+
+    /* -------------------------- Confirm Send Amounts -------------------------- */
+
+    // const [amountBeforeSendTerra, amountBeforeSendOsmosis] = [13.78, 5.18];
+
+    await this.auditTransaction(
+      amountBeforeSendTerra,
+      amountBeforeSendOsmosis,
+      sendAmount,
+      token,
+      origin,
+      destination,
+    );
+
+    /* -------------------------------- Send Back ------------------------------- */
+
+    // Extract amounts on origin and destination chains before send back transaction.
+    const [amountBeforeSendBackOsmosis, amountBeforeSendBackTerra] =
+      (await this.evaluateAmounts(token, destination, origin)) ?? [];
+
+    // Retry clicking send back button up to 3 times.
+    const clickSendBack = async (
+      buttonText = 'Osmosis Send back Axelar → Terra → Osmosis',
+    ) => {
+      // Wait for chains to load.
+      await this.timeout(5000);
+      // Click button to send back from destination to origin.
+      await this.expectButton(buttonText, 'sendback');
+    };
+    const onSendBackDisabled = async () => {
+      await this.goToAssetPage(token);
+    };
+    this.retryAction(clickSendBack, onSendBackDisabled);
+
+    // Focus on send back modal to keep it active.
+    await page.getByRole('dialog').focus();
+
+    // Confirm elements in the send back transaction page.
+    for (const text of [
+      'Amount',
+      'Fee',
+      'Balance',
+      'Balance after tx',
+      'Password',
+    ]) {
+      await this.expectText(text);
+    }
+
+    await console.log('first page confirmed');
+
+    // Fill out send back form and click submit.
+    await this.userInput(sendAmount.toString(), 'input[name="input"]');
+    await this.userInput('Testtest123!', 'input[type="password"]');
+    await this.userSubmit();
+
+    await this.timeout(5000);
+
+    await console.log('make transaction');
+
+    // Confirm next stage of send back transaction is displayed on modal.
+    for (const text of [
+      'Amount',
+      'Fee',
+      'Balance',
+      'Balance after tx',
+      'Password',
+    ]) {
+      await this.expectText(text, false, false, false, 800000);
+    }
+
+    await console.log('first tx confirmed');
+
+    // Attempt to submit without a password, confirm error, and close modal.
+    await this.userSubmit();
+    await this.expectText('Incorrect password', false, true);
+
+    await console.log('incorrect password');
+
+    /* ------------------------ Confirm Send Back Amounts ----------------------- */
+
+    await this.auditTransaction(
+      amountBeforeSendBackOsmosis,
+      amountBeforeSendBackTerra,
+      sendAmount,
+      token,
+      destination,
+      origin,
+    );
   }
 
   /* -------------------------------------------------------------------------- */
@@ -423,7 +820,7 @@ class HomePage {
     // Ensure correct password entry results in private key display.
     await this.userInput('Testtest123!');
     await this.userSubmit();
-    await this.expectText('Private Key', false, true, true);
+    await this.expectText('Private key', false, true, true);
 
     /* ----------------------------- Change Password ---------------------------- */
 

@@ -11,6 +11,11 @@ describe('Station', () => {
         expect(settingsEvaluated).to.be.true;
       });
     });
+    it('Evaluate send functionality', () => {
+      cy.evaluateSend().then(sendEvaluated => {
+        expect(sendEvaluated).to.be.true;
+      });
+    });
     it('Evaluate manage assets functionality', () => {
       cy.evaluateManageAssets().then(manageAssetsEvaluated => {
         expect(manageAssetsEvaluated).to.be.true;
